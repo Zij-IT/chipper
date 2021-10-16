@@ -1,3 +1,13 @@
+mod registers;
+mod display;
+mod memory;
+mod stack;
+
+use registers::Registers;
+use display::Display;
+use memory::Memory;
+use stack::Stack;
+
 pub struct Chip8 {
     frame_buffer: Display,
     memory: Memory,
