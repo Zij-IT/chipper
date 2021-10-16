@@ -1,11 +1,13 @@
-mod registers;
+mod register;
 mod display;
 mod memory;
+mod opcode;
 mod stack;
 
-use registers::Registers;
+use register::Registers;
 use display::Display;
 use memory::Memory;
+pub use opcode::OpCode;
 use stack::Stack;
 
 pub struct Chip8 {
@@ -20,5 +22,7 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
-
+    pub fn translate_opcode(op: u16) -> OpCode {
+        todo!()
+    }
 }
