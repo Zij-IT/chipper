@@ -5,11 +5,11 @@ pub enum OpCode {
     Return,
     Jump(u16),
     Call(u16),
-    SkipEqual(u8, u16),
-    SkipNotEqual(u8, u16),
+    SkipEqual(u8, u8),
+    SkipNotEqual(u8, u8),
     SkipEqualRegister(u8, u8),
-    Load(u8, u16),
-    Add(u8, u16),
+    Load(u8, u8),
+    Add(u8, u8),
     LoadRegister(u8, u8),
     OrRegister(u8, u8),
     AndRegister(u8, u8),
@@ -22,7 +22,7 @@ pub enum OpCode {
     SkipNotEqualRegister(u8, u8),
     SetIndexRegister(u16),
     JumpWithOffset(u16),
-    Random(u8, u16),
+    Random(u8, u8),
     Draw(u8, u8, u8),
     SkipKeyPressed(u8),
     SkipKeyNotPressed(u8),
@@ -47,7 +47,7 @@ impl From<u16> for OpCode {
         );
 
         let nnn = op & 0x0FFF;
-        let kk = op & 0x00FF;
+        let kk = (op & 0x00FF) as u8;
         let x = nibbles.1;
         let y = nibbles.2;
         let n = nibbles.3;
