@@ -32,7 +32,7 @@ pub enum OpCode {
     SetSoundTimer(u8),
     AddIndexRegister(u8),
     IndexAtSprite(u8),
-    IndexAtBinarySprite(u8),
+    BinaryCodeConversion(u8),
     StoreAllRegisters(u8),
     LoadAllRegisters(u8),
 }
@@ -85,7 +85,7 @@ impl From<u16> for OpCode {
             (0xF, _, 0x1, 0x8) => Self::SetSoundTimer(x),
             (0xF, _, 0x1, 0xE) => Self::AddIndexRegister(x),
             (0xF, _, 0x2, 0x9) => Self::IndexAtSprite(x),
-            (0xF, _, 0x3, 0x3) => Self::IndexAtBinarySprite(x),
+            (0xF, _, 0x3, 0x3) => Self::BinaryCodeConversion(x),
             (0xF, _, 0x5, 0x5) => Self::StoreAllRegisters(x),
             (0xF, _, 0x6, 0x5) => Self::LoadAllRegisters(x),
             _ => unreachable!(),
