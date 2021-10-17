@@ -1,13 +1,13 @@
-mod register;
 mod display;
 mod memory;
 mod opcode;
+mod register;
 mod stack;
 
-use register::Registers;
 use display::Display;
 use memory::Memory;
 use opcode::OpCode;
+use register::Registers;
 use stack::Stack;
 
 use rand::Rng;
@@ -31,12 +31,11 @@ impl Chip8 {
     fn execute(&mut self, op: OpCode) -> Result<(), ()> {
         match op {
             OpCode::SysAddr(_addr) => {
-                // Unimplemented on most machines
+                // Unimplemented on most machines, this is purposefully skipped
                 // TODO: Make this a possible error
-                unimplemented!();
             }
             OpCode::Clear => {
-               self.frame_buffer.clear();
+                self.frame_buffer.clear();
             }
             OpCode::Return => {
                 let pc = self.stack.pop();
@@ -128,8 +127,12 @@ impl Chip8 {
             OpCode::Random(x, kk) => {
                 self.v[x] = self.create_random_byte() & kk;
             }
-            OpCode::Draw(_x, _y, _n) => {
+            OpCode::Draw(x, y, n) => {
                 // TODO: Implement draw function
+                let _x = self.v[x] % 64;
+                let _y = self.v[y] % 32;
+                self.set_vf(false);
+
                 unimplemented!();
             }
             OpCode::SkipKeyPressed(_x) => {
