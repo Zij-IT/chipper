@@ -125,25 +125,25 @@ impl Chip8 {
             }
             OpCode::Random(x, kk) => {
                 // TODO: Generate random number and add to kk
-                let random: u8 = todo!();
+                let random = self.create_random_byte();
                 self.v[x] = random & kk;
             }
-            OpCode::Draw(x, y, n) => {
+            OpCode::Draw(_x, _y, _n) => {
                 // TODO: Implement draw function
                 unimplemented!();
             }
-            OpCode::SkipKeyPressed(x) => {
+            OpCode::SkipKeyPressed(_x) => {
                 // TODO: Implement key systems
                 unimplemented!();
             }
-            OpCode::SkipKeyNotPressed(x) => {
+            OpCode::SkipKeyNotPressed(_x) => {
                 // TODO: Implement key systems
                 unimplemented!();
             }
             OpCode::LoadDelay(x) => {
                 self.v[x] = self.delay_timer;
             }
-            OpCode::LoadNextKeyPress(x) => {
+            OpCode::LoadNextKeyPress(_x) => {
                 // TODO: Implement key systems
                 unimplemented!();
             }
@@ -159,34 +159,31 @@ impl Chip8 {
                 self.set_vf(overflow_bit == 0x8);
                 self.index = res;
             }
-            OpCode::IndexAtSprite(x) => {
+            OpCode::IndexAtSprite(_x) => {
                 // TODO: Implement fonts
                 unimplemented!();
             }
             OpCode::BinaryCodeConversion(x) => {
-                // TODO: Implement binary decimal conversion
                 let value = self.v[x];
-                // memory[self.index + 0] = value / 100;
-                // memory[self.index + 1] = (value % 100) / 10;
-                // memory[self.index + 2] = value % 10;
-                unimplemented!();
+                self.memory[self.index + 0] = value / 100;
+                self.memory[self.index + 1] = (value % 100) / 10;
+                self.memory[self.index + 2] = value % 10;
             }
             OpCode::StoreAllRegisters(x) => {
-                // TODO: Implement memory system
-                unimplemented!();
-
-                for offset in 0..x {
-                    // Set memory at (self.index + x) equal to v[x]
+                // TODO: The behavior of self.index should be configurable
+                //  In premodern variations, the value of self.index was set to
+                //  self.index + x + 1
+                for offset in 0..(x + 1) {
+                    self.memory[self.index + offset as u16] = self.v[offset];
                 }
             }
             OpCode::LoadAllRegisters(x) => {
-                // TODO: Implement memory system
-                unimplemented!();
-
-                for offset in 0..x {
-                    // Set v[x] equal to memory value at (self.index + x)
+                // TODO: The behavior of self.index should be configurable
+                //  In premodern variations, the value of self.index was set to
+                //  self.index + x + 1
+                for offset in 0..(x + 1) {
+                    self.v[offset] = self.memory[self.index + offset as u16];
                 }
-
             }
         }
 
@@ -195,5 +192,9 @@ impl Chip8 {
 
     fn set_vf(&mut self, cond: bool) {
         self.v[0xf] = if cond { 1 } else { 0 };
+    }
+
+    fn create_random_byte(&self) -> u8 {
+        todo!()
     }
 }
