@@ -10,6 +10,8 @@ use memory::Memory;
 use opcode::OpCode;
 use stack::Stack;
 
+use rand::Rng;
+
 pub struct Chip8 {
     frame_buffer: Display,
     memory: Memory,
@@ -124,9 +126,7 @@ impl Chip8 {
                 self.program_counter = addr + self.v[0] as u16;
             }
             OpCode::Random(x, kk) => {
-                // TODO: Generate random number and add to kk
-                let random = self.create_random_byte();
-                self.v[x] = random & kk;
+                self.v[x] = self.create_random_byte() & kk;
             }
             OpCode::Draw(_x, _y, _n) => {
                 // TODO: Implement draw function
@@ -195,6 +195,6 @@ impl Chip8 {
     }
 
     fn create_random_byte(&self) -> u8 {
-        todo!()
+        rand::thread_rng().gen::<u8>()
     }
 }
