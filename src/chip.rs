@@ -37,7 +37,13 @@ impl Chip8 {
         }
     }
 
-    fn translate_opcode(op: u16) -> OpCode {
+    fn fetch(&mut self) -> u16 {
+        let next_instr = self.memory.get_word(self.program_counter);
+        self.program_counter += 2;
+        next_instr
+    }
+
+    fn decode(op: u16) -> OpCode {
         From::from(op)
     }
 
