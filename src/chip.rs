@@ -162,9 +162,10 @@ impl Chip8 {
                 self.set_vf(overflow_bit == 0x8);
                 self.index = res;
             }
-            OpCode::IndexAtSprite(_x) => {
+            OpCode::IndexAtSprite(x) => {
                 // TODO: Implement fonts
-                unimplemented!();
+                debug_assert!(x < 0x10);
+                self.index = Memory::index_of_font_char(x);
             }
             OpCode::BinaryCodeConversion(x) => {
                 let value = self.v[x];
