@@ -24,6 +24,19 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
+    pub fn new() -> Self {
+        Self {
+            frame_buffer: Display::new(),
+            memory: Memory::new(),
+            v: Registers::new(),
+            stack: Stack::new(),
+            index: 0,
+            program_counter: 0,
+            delay_timer: 0,
+            sound_timer: 0,
+        }
+    }
+
     fn translate_opcode(op: u16) -> OpCode {
         From::from(op)
     }
@@ -127,7 +140,7 @@ impl Chip8 {
             OpCode::Random(x, kk) => {
                 self.v[x] = self.create_random_byte() & kk;
             }
-            OpCode::Draw(x, y, n) => {
+            OpCode::Draw(x, y, _n) => {
                 // TODO: Implement draw function
                 let _x = self.v[x] % 64;
                 let _y = self.v[y] % 32;
@@ -163,7 +176,6 @@ impl Chip8 {
                 self.index = res;
             }
             OpCode::IndexAtSprite(x) => {
-                // TODO: Implement fonts
                 debug_assert!(x < 0x10);
                 self.index = Memory::index_of_font_char(x);
             }
@@ -201,4 +213,9 @@ impl Chip8 {
     fn create_random_byte(&self) -> u8 {
         rand::thread_rng().gen::<u8>()
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 }
