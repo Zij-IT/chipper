@@ -3,9 +3,7 @@ use std::ops::IndexMut;
 
 pub struct Registers([u8; 15]);
 
-impl Registers {
-
-}
+impl Registers {}
 
 impl Index<u8> for Registers {
     type Output = u8;
