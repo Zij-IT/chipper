@@ -10,6 +10,11 @@ impl Memory {
         Self(mem)
     }
 
+    pub fn get_word(&self, addr: u16) -> u16 {
+        debug_assert!(addr < 4096);
+        (self[addr] as u16) | ((self[addr + 1] as u16) << 8)
+    }
+
     pub fn index_of_font_char(byte: u8) -> u16 {
         (0x50 + (byte * 5)) as u16
     }
