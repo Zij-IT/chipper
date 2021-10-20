@@ -1,6 +1,7 @@
 use std::ops::Index;
 use std::ops::IndexMut;
 
+#[derive(PartialEq, Eq, Debug)]
 pub struct Memory([u8; 4096]);
 
 impl Memory {

@@ -1,3 +1,4 @@
+#[derive(PartialEq, Eq, Debug)]
 pub struct Stack {
     stack: [u16; 16],
     stack_ptr: usize,

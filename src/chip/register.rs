@@ -1,11 +1,12 @@
 use std::ops::Index;
 use std::ops::IndexMut;
 
-pub struct Registers([u8; 15]);
+#[derive(PartialEq, Eq, Debug)]
+pub struct Registers([u8; 16]);
 
 impl Registers {
     pub fn new() -> Self {
-        Self([0; 15])
+        Self([0; 16])
     }
 }
 
