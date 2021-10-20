@@ -145,15 +145,19 @@ impl Chip8 {
                 self.program_counter = addr + self.v[0] as u16;
             }
             OpCode::Random(x, kk) => {
-                self.v[x] = self.create_random_byte() & kk;
+                self.v[x] = self.generate_random_byte() & kk;
             }
-            OpCode::Draw(x, y, _n) => {
-                // TODO: Implement draw function
-                let _x = self.v[x] % 64;
-                let _y = self.v[y] % 32;
-                self.set_vf(false);
+            OpCode::Draw(x, y, n) => {
+                let x = self.v[x] % 64;
+                let y = self.v[y] % 32;
+                let mut pixel_changed = false;
 
-                unimplemented!();
+                for sy in 0..n {
+                    let byte = self.memory[self.index + sy as u16];
+                    pixel_changed = pixel_changed || self.frame_buffer.draw_byte(byte, x, y + sy);
+                }
+
+                self.set_vf(pixel_changed);
             }
             OpCode::SkipKeyPressed(_x) => {
                 // TODO: Implement key systems
@@ -188,7 +192,7 @@ impl Chip8 {
             }
             OpCode::BinaryCodeConversion(x) => {
                 let value = self.v[x];
-                self.memory[self.index + 0] = value / 100;
+                self.memory[self.index] = value / 100;
                 self.memory[self.index + 1] = (value % 100) / 10;
                 self.memory[self.index + 2] = value % 10;
             }
@@ -217,7 +221,7 @@ impl Chip8 {
         self.v[0xf] = if cond { 1 } else { 0 };
     }
 
-    fn create_random_byte(&self) -> u8 {
+    fn generate_random_byte(&self) -> u8 {
         rand::thread_rng().gen::<u8>()
     }
 }
@@ -230,7 +234,7 @@ mod tests {
     fn sysaddr() {
         let mut cpu = Chip8::new();
         assert!(cpu.execute(OpCode::SysAddr(0x0000)).is_ok());
-        assert!(cpu == Chip8::new());
+        assert_eq!(cpu, Chip8::new());
     }
 
     #[test]
@@ -238,7 +242,7 @@ mod tests {
         let mut cpu = Chip8::new();
         cpu.frame_buffer = Display::new_filled();
         assert!(cpu.execute(OpCode::Clear).is_ok());
-        assert!(cpu == Chip8::new());
+        assert_eq!(cpu, Chip8::new());
     }
 
     #[test]
@@ -247,7 +251,7 @@ mod tests {
         let mut cpu = Chip8::new();
         cpu.stack.push(ADDR);
         assert!(cpu.execute(OpCode::Return).is_ok());
-        assert!(cpu.program_counter == ADDR);
+        assert_eq!(cpu.program_counter, ADDR);
     }
 
     #[test]
@@ -255,7 +259,7 @@ mod tests {
         const ADDR: u16 = 0x420;
         let mut cpu = Chip8::new();
         assert!(cpu.execute(OpCode::Jump(ADDR)).is_ok());
-        assert!(cpu.program_counter == ADDR);
+        assert_eq!(cpu.program_counter, ADDR);
     }
 
     #[test]
@@ -266,8 +270,8 @@ mod tests {
         cpu.program_counter = PROGRAM_COUNTER;
 
         assert!(cpu.execute(OpCode::Call(CALL_ADDR)).is_ok());
-        assert!(cpu.program_counter == CALL_ADDR);
-        assert!(cpu.stack.pop() == PROGRAM_COUNTER);
+        assert_eq!(cpu.program_counter, CALL_ADDR);
+        assert_eq!(cpu.stack.pop(), PROGRAM_COUNTER);
     }
 
     #[test]
@@ -275,12 +279,12 @@ mod tests {
         let mut skip = Chip8::new();
         skip.v[0xC] = 0xAB;
         assert!(skip.execute(OpCode::SkipEqual(0xC, 0xAB)).is_ok());
-        assert!(skip.program_counter == 2);
+        assert_eq!(skip.program_counter, 2);
 
         let mut dont_skip = Chip8::new();
         dont_skip.v[0xC] = 0xAD;
         assert!(dont_skip.execute(OpCode::SkipEqual(0xC, 0xAB)).is_ok());
-        assert!(dont_skip.program_counter == 0);
+        assert_eq!(dont_skip.program_counter, 0);
     }
 
     #[test]
@@ -288,12 +292,12 @@ mod tests {
         let mut skip = Chip8::new();
         skip.v[0xC] = 0xAD;
         assert!(skip.execute(OpCode::SkipNotEqual(0xC, 0xAB)).is_ok());
-        assert!(skip.program_counter == 2);
+        assert_eq!(skip.program_counter, 2);
 
         let mut dont_skip = Chip8::new();
         dont_skip.v[0xC] = 0xAB;
         assert!(dont_skip.execute(OpCode::SkipNotEqual(0xC, 0xAB)).is_ok());
-        assert!(dont_skip.program_counter == 0);
+        assert_eq!(dont_skip.program_counter, 0);
     }
 
     #[test]
@@ -302,7 +306,7 @@ mod tests {
         skip.v[0xC] = 0xA;
         skip.v[0xB] = 0xA;
         assert!(skip.execute(OpCode::SkipEqualRegister(0xC, 0xB)).is_ok());
-        assert!(skip.program_counter == 2);
+        assert_eq!(skip.program_counter, 2);
 
         let mut dont_skip = Chip8::new();
         dont_skip.v[0xC] = 0xC;
@@ -310,14 +314,14 @@ mod tests {
         assert!(dont_skip
             .execute(OpCode::SkipEqualRegister(0xC, 0xB))
             .is_ok());
-        assert!(dont_skip.program_counter == 0);
+        assert_eq!(dont_skip.program_counter, 0);
     }
 
     #[test]
     fn load() {
         let mut cpu = Chip8::new();
         assert!(cpu.execute(OpCode::Load(0xC, 0xAB)).is_ok());
-        assert!(cpu.v[0xC] == 0xAB);
+        assert_eq!(cpu.v[0xC], 0xAB);
     }
 
     #[test]
@@ -325,7 +329,8 @@ mod tests {
         let mut cpu = Chip8::new();
         cpu.v[0xC] = 0xA;
         assert!(cpu.execute(OpCode::Add(0xC, 0xFC)).is_ok());
-        assert!(cpu.v[0xC] == 0x06 && cpu.v[0xF] == 0);
+        assert_eq!(cpu.v[0xC], 0x06);
+        assert_eq!(cpu.v[0xF], 0);
     }
 
     #[test]
@@ -333,7 +338,8 @@ mod tests {
         let mut cpu = Chip8::new();
         cpu.v[0xC] = 0xFF;
         assert!(cpu.execute(OpCode::LoadRegister(0x0, 0xC)).is_ok());
-        assert!(cpu.v[0xC] == cpu.v[0x0] && cpu.v[0x0] == 0xFF);
+        assert_eq!(cpu.v[0x0], cpu.v[0xC]);
+        assert_eq!(cpu.v[0x0], 0xFF);
     }
 
     #[test]
@@ -342,8 +348,8 @@ mod tests {
         cpu.v[0x0] = 0x0F;
         cpu.v[0x1] = 0xF0;
         assert!(cpu.execute(OpCode::OrRegister(0x0, 0x1)).is_ok());
-        assert!(cpu.v[0x0] == 0xFF);
-        assert!(cpu.v[0x1] == 0xF0);
+        assert_eq!(cpu.v[0x0], 0xFF);
+        assert_eq!(cpu.v[0x1], 0xF0);
     }
 
     #[test]
@@ -352,8 +358,8 @@ mod tests {
         cpu.v[0x0] = 0x2F;
         cpu.v[0x1] = 0xF2;
         assert!(cpu.execute(OpCode::AndRegister(0x0, 0x1)).is_ok());
-        assert!(cpu.v[0x0] == 0x22);
-        assert!(cpu.v[0x1] == 0xF2);
+        assert_eq!(cpu.v[0x0], 0x22);
+        assert_eq!(cpu.v[0x1], 0xF2);
     }
 
     #[test]
@@ -362,8 +368,8 @@ mod tests {
         cpu.v[0x0] = 0b1010_1010;
         cpu.v[0x1] = 0b0101_0101;
         assert!(cpu.execute(OpCode::XorRegister(0x0, 0x1)).is_ok());
-        assert!(cpu.v[0x0] == 0b1111_1111);
-        assert!(cpu.v[0x1] == 0b0101_0101);
+        assert_eq!(cpu.v[0x0], 0b1111_1111);
+        assert_eq!(cpu.v[0x1], 0b0101_0101);
     }
 
     #[test]
@@ -372,17 +378,17 @@ mod tests {
         set_flag.v[0x0] = 0xAF;
         set_flag.v[0x1] = 0xBC;
         assert!(set_flag.execute(OpCode::AddRegister(0x0, 0x1)).is_ok());
-        assert!(set_flag.v[0x0] == 0x6B);
-        assert!(set_flag.v[0x1] == 0xBC);
-        assert!(set_flag.v[0xF] == 0x01);
+        assert_eq!(set_flag.v[0x0], 0x6B);
+        assert_eq!(set_flag.v[0x1], 0xBC);
+        assert_eq!(set_flag.v[0xF], 0x01);
 
         let mut no_flag = Chip8::new();
         no_flag.v[0x0] = 0x0F;
         no_flag.v[0x1] = 0xE1;
         assert!(no_flag.execute(OpCode::AddRegister(0x0, 0x1)).is_ok());
-        assert!(no_flag.v[0x0] == 0xF0);
-        assert!(no_flag.v[0x1] == 0xE1);
-        assert!(no_flag.v[0xF] == 0x00);
+        assert_eq!(no_flag.v[0x0], 0xF0);
+        assert_eq!(no_flag.v[0x1], 0xE1);
+        assert_eq!(no_flag.v[0xF], 0x00);
     }
 
     #[test]
@@ -391,17 +397,17 @@ mod tests {
         set_flag.v[0x0] = 0xFF;
         set_flag.v[0x1] = 0x01;
         assert!(set_flag.execute(OpCode::SubRegister(0x0, 0x1)).is_ok());
-        assert!(set_flag.v[0x0] == 0xFE);
-        assert!(set_flag.v[0x1] == 0x01);
-        assert!(set_flag.v[0xF] == 0x01);
+        assert_eq!(set_flag.v[0x0], 0xFE);
+        assert_eq!(set_flag.v[0x1], 0x01);
+        assert_eq!(set_flag.v[0xF], 0x01);
 
         let mut no_flag = Chip8::new();
         no_flag.v[0x0] = 0x01;
         no_flag.v[0x1] = 0x02;
         assert!(no_flag.execute(OpCode::SubRegister(0x0, 0x1)).is_ok());
-        assert!(no_flag.v[0x0] == 0xFF);
-        assert!(no_flag.v[0x1] == 0x02);
-        assert!(no_flag.v[0xF] == 0x00);
+        assert_eq!(no_flag.v[0x0], 0xFF);
+        assert_eq!(no_flag.v[0x1], 0x02);
+        assert_eq!(no_flag.v[0xF], 0x00);
     }
 
     #[test]
@@ -411,16 +417,16 @@ mod tests {
         assert!(set_flag
             .execute(OpCode::ShiftRightRegister(0x0, 0x0))
             .is_ok());
-        assert!(set_flag.v[0x0] == 0x08);
-        assert!(set_flag.v[0xF] == 0x01);
+        assert_eq!(set_flag.v[0x0], 0x08);
+        assert_eq!(set_flag.v[0xF], 0x01);
 
         let mut no_flag = Chip8::new();
         no_flag.v[0x0] = 0x10;
         assert!(no_flag
             .execute(OpCode::ShiftRightRegister(0x0, 0x0))
             .is_ok());
-        assert!(no_flag.v[0x0] == 0x08);
-        assert!(no_flag.v[0xF] == 0x00);
+        assert_eq!(no_flag.v[0x0], 0x08);
+        assert_eq!(no_flag.v[0xF], 0x00);
     }
 
     #[test]
@@ -428,44 +434,84 @@ mod tests {
         let mut set_flag = Chip8::new();
         set_flag.v[0x0] = 0x01;
         set_flag.v[0x1] = 0x02;
-        assert!(set_flag.execute(OpCode::SubReverseRegister(0x0, 0x1)).is_ok());
-        assert!(set_flag.v[0x0] == 0x01);
-        assert!(set_flag.v[0x1] == 0x02);
-        assert!(set_flag.v[0xF] == 0x01);
+        assert!(set_flag
+            .execute(OpCode::SubReverseRegister(0x0, 0x1))
+            .is_ok());
+        assert_eq!(set_flag.v[0x0], 0x01);
+        assert_eq!(set_flag.v[0x1], 0x02);
+        assert_eq!(set_flag.v[0xF], 0x01);
 
         let mut no_flag = Chip8::new();
         no_flag.v[0x0] = 0x0B;
-        no_flag.v[0x1] = 0xAF;
-        assert!(no_flag.execute(OpCode::SubReverseRegister(0x0, 0x1)).is_ok());
-        assert!(no_flag.v[0x0] == 0xA4);
-        assert!(no_flag.v[0x1] == 0xAF);
-        assert!(no_flag.v[0xF] == 0x00);
-
+        no_flag.v[0x1] = 0x0A;
+        assert!(no_flag
+            .execute(OpCode::SubReverseRegister(0x0, 0x1))
+            .is_ok());
+        assert_eq!(no_flag.v[0x0], 0xFF);
+        assert_eq!(no_flag.v[0x1], 0x0A);
+        assert_eq!(no_flag.v[0xF], 0x00);
     }
 
     #[test]
     fn shift_left_register() {
-        unimplemented!()
+        let mut set_flag = Chip8::new();
+        set_flag.v[0x0] = 0x88;
+        assert!(set_flag
+            .execute(OpCode::ShiftLeftRegister(0x0, 0x0))
+            .is_ok());
+        assert_eq!(set_flag.v[0x0], 0x10);
+        assert_eq!(set_flag.v[0xF], 0x01);
+
+        let mut no_flag = Chip8::new();
+        no_flag.v[0x0] = 0x01;
+        assert!(no_flag.execute(OpCode::ShiftLeftRegister(0x0, 0x0)).is_ok());
+        assert_eq!(no_flag.v[0x0], 0x02);
+        assert_eq!(no_flag.v[0xF], 0x00);
     }
 
     #[test]
     fn skip_not_equal_register() {
-        unimplemented!()
+        let mut skip = Chip8::new();
+        skip.v[0xC] = 0xC;
+        skip.v[0xB] = 0xB;
+        assert!(skip.execute(OpCode::SkipEqualRegister(0xC, 0xB)).is_ok());
+        assert_eq!(skip.program_counter, 0);
+
+        let mut not_skip = Chip8::new();
+        not_skip.v[0xC] = 0xA;
+        not_skip.v[0xB] = 0xA;
+        assert!(not_skip
+            .execute(OpCode::SkipEqualRegister(0xC, 0xB))
+            .is_ok());
+        assert_eq!(not_skip.program_counter, 2);
     }
 
     #[test]
     fn set_index_register() {
-        unimplemented!()
+        const ADDR: u16 = 0x500;
+
+        let mut cpu = Chip8::new();
+        assert!(cpu.execute(OpCode::SetIndexRegister(ADDR)).is_ok());
+        assert_eq!(cpu.index, 0x500);
     }
 
     #[test]
     fn jump_with_offset() {
-        unimplemented!()
+        const ADDR: u16 = 0x500;
+
+        let mut cpu = Chip8::new();
+        cpu.v[0] = 0x20;
+        assert!(cpu.execute(OpCode::JumpWithOffset(ADDR)).is_ok());
+        assert_eq!(cpu.program_counter, 0x520);
     }
 
     #[test]
     fn random() {
-        unimplemented!()
+        // There is not really a good test for this, as it just generates a random byte
+        // so, I will just make sure that the CPU has a function for generating a random byte.
+        let mut cpu = Chip8::new();
+        assert!(cpu.execute(OpCode::Random(0x0, 0xFF)).is_ok());
+        let _byte = cpu.generate_random_byte();
     }
 
     #[test]
@@ -485,7 +531,10 @@ mod tests {
 
     #[test]
     fn load_delay() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        cpu.delay_timer = 0x20;
+        assert!(cpu.execute(OpCode::LoadDelay(0x0)).is_ok());
+        assert_eq!(cpu.v[0x0], cpu.delay_timer);
     }
 
     #[test]
@@ -495,36 +544,81 @@ mod tests {
 
     #[test]
     fn set_delay_timer() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        cpu.v[0x0] = 0x20;
+        cpu.delay_timer = 0x1;
+        assert!(cpu.execute(OpCode::SetDelayTimer(0x0)).is_ok());
+        assert_eq!(cpu.v[0x0], cpu.delay_timer);
     }
 
     #[test]
     fn set_sound_timer() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        cpu.v[0x0] = 0x20;
+        cpu.sound_timer = 0x1;
+        assert!(cpu.execute(OpCode::SetSoundTimer(0x0)).is_ok());
+        assert_eq!(cpu.v[0x0], cpu.sound_timer);
     }
 
     #[test]
     fn add_index_register() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        cpu.index = 0x01;
+        cpu.v[0x0] = 0x20;
+        assert!(cpu.execute(OpCode::AddIndexRegister(0x0)).is_ok());
+        assert_eq!(cpu.index, 0x21);
+        assert_eq!(cpu.v[0xF], 0x0);
     }
 
     #[test]
     fn index_at_sprite() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        assert!(cpu.execute(OpCode::IndexAtSprite(0x1)).is_ok());
+        assert_eq!(cpu.index, Memory::index_of_font_char(0x1));
     }
 
     #[test]
     fn binary_code_conversion() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        cpu.v[0x0] = 152;
+        cpu.index = 0x100;
+        assert!(cpu.execute(OpCode::BinaryCodeConversion(0x0)).is_ok());
+        assert_eq!(cpu.v[0x0], 152);
+        assert_eq!(cpu.index, 0x100);
+        assert_eq!(cpu.memory[0x100], 0x1);
+        assert_eq!(cpu.memory[0x101], 0x5);
+        assert_eq!(cpu.memory[0x102], 0x2);
     }
 
     #[test]
     fn store_all_registers() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        cpu.index = 0x100;
+        cpu.v[0x0] = 0xB;
+        cpu.v[0x1] = 0xE;
+        cpu.v[0x2] = 0xE;
+        cpu.v[0x3] = 0xF;
+
+        assert!(cpu.execute(OpCode::StoreAllRegisters(0x3)).is_ok());
+        assert_eq!(cpu.memory[0x100], 0xB);
+        assert_eq!(cpu.memory[0x101], 0xE);
+        assert_eq!(cpu.memory[0x102], 0xE);
+        assert_eq!(cpu.memory[0x103], 0xF);
     }
 
     #[test]
     fn load_all_registers() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        cpu.index = 0x100;
+        cpu.memory[0x100] = 0xB;
+        cpu.memory[0x101] = 0xE;
+        cpu.memory[0x102] = 0xE;
+        cpu.memory[0x103] = 0xF;
+
+        assert!(cpu.execute(OpCode::LoadAllRegisters(0x3)).is_ok());
+        assert_eq!(cpu.v[0x0], 0xB);
+        assert_eq!(cpu.v[0x1], 0xE);
+        assert_eq!(cpu.v[0x2], 0xE);
+        assert_eq!(cpu.v[0x3], 0xF);
     }
 }
