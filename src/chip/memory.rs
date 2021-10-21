@@ -13,7 +13,7 @@ impl Memory {
 
     pub fn get_word(&self, addr: u16) -> u16 {
         debug_assert!(addr < 4096);
-        u16::from(self[addr]) | (u16::from(self[addr + 1]) << 8)
+        (u16::from(self[addr]) << 8) | u16::from(self[addr + 1])
     }
 
     pub fn index_of_font_char(byte: u8) -> u16 {
