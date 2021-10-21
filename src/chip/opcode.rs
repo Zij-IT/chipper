@@ -38,6 +38,7 @@ pub enum OpCode {
 }
 
 impl From<u16> for OpCode {
+    #[allow(clippy::cast_possible_truncation)]
     fn from(op: u16) -> Self {
         let nibbles = (
             ((op & 0xF000) >> 12) as u8,
