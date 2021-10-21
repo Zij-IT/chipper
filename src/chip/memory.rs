@@ -20,6 +20,18 @@ impl Memory {
         u16::from(0x50 + (byte * 5))
     }
 
+    pub fn load_rom(&mut self, rom: &[u8]) -> Result<(), ()> {
+        if rom.len() >= (self.0.len() - 0x200) {
+            return Err(());
+        }
+
+        for (i, byte) in rom.iter().copied().enumerate() {
+            self.0[0x200 + i] = byte;
+        }
+
+        Ok(())
+    }
+
     fn load_font(memory: &mut [u8]) {
         let zero = [0xF0, 0x90, 0x90, 0x90, 0xF0]; // 0
         let one = [0x20, 0x60, 0x20, 0x20, 0x70]; // 1

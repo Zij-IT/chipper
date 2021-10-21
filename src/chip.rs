@@ -48,6 +48,10 @@ impl Chip8 {
         &self.display.frame_buffer()
     }
 
+    pub fn load_rom(&mut self, rom: &[u8]) -> Result<(), ()> {
+        self.memory.load_rom(rom)
+    }
+
     fn fetch(&mut self) -> u16 {
         let next_instr = self.memory.get_word(self.program_counter);
         self.program_counter += 2;
