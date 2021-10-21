@@ -89,7 +89,7 @@ impl From<u16> for OpCode {
             (0xF, _, 0x3, 0x3) => Self::BinaryCodeConversion(x),
             (0xF, _, 0x5, 0x5) => Self::StoreAllRegisters(x),
             (0xF, _, 0x6, 0x5) => Self::LoadAllRegisters(x),
-            _ => unreachable!(),
+            _ => panic!("'{:X}' is not a known opcode", op),
         }
     }
 }
