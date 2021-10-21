@@ -1,3 +1,5 @@
+#![warn(clippy::pedantic)]
+
 mod chip;
 
 fn main() {
