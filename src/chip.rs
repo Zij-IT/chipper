@@ -32,7 +32,7 @@ impl Chip8 {
             v: Registers::new(),
             stack: Stack::new(),
             index: 0,
-            program_counter: 0,
+            program_counter: 0x200,
             delay_timer: 0,
             sound_timer: 0,
         }
@@ -293,12 +293,12 @@ mod tests {
         let mut skip = Chip8::new();
         skip.v[0xC] = 0xAB;
         assert!(skip.execute(OpCode::SkipEqual(0xC, 0xAB)).is_ok());
-        assert_eq!(skip.program_counter, 2);
+        assert_eq!(skip.program_counter, 0x200 + 2);
 
         let mut dont_skip = Chip8::new();
         dont_skip.v[0xC] = 0xAD;
         assert!(dont_skip.execute(OpCode::SkipEqual(0xC, 0xAB)).is_ok());
-        assert_eq!(dont_skip.program_counter, 0);
+        assert_eq!(dont_skip.program_counter, 0x200 + 0);
     }
 
     #[test]
@@ -306,12 +306,12 @@ mod tests {
         let mut skip = Chip8::new();
         skip.v[0xC] = 0xAD;
         assert!(skip.execute(OpCode::SkipNotEqual(0xC, 0xAB)).is_ok());
-        assert_eq!(skip.program_counter, 2);
+        assert_eq!(skip.program_counter, 0x200 + 2);
 
         let mut dont_skip = Chip8::new();
         dont_skip.v[0xC] = 0xAB;
         assert!(dont_skip.execute(OpCode::SkipNotEqual(0xC, 0xAB)).is_ok());
-        assert_eq!(dont_skip.program_counter, 0);
+        assert_eq!(dont_skip.program_counter, 0x200 + 0);
     }
 
     #[test]
@@ -320,7 +320,7 @@ mod tests {
         skip.v[0xC] = 0xA;
         skip.v[0xB] = 0xA;
         assert!(skip.execute(OpCode::SkipEqualRegister(0xC, 0xB)).is_ok());
-        assert_eq!(skip.program_counter, 2);
+        assert_eq!(skip.program_counter, 0x200 + 2);
 
         let mut dont_skip = Chip8::new();
         dont_skip.v[0xC] = 0xC;
@@ -328,7 +328,7 @@ mod tests {
         assert!(dont_skip
             .execute(OpCode::SkipEqualRegister(0xC, 0xB))
             .is_ok());
-        assert_eq!(dont_skip.program_counter, 0);
+        assert_eq!(dont_skip.program_counter, 0x200 + 0);
     }
 
     #[test]
@@ -489,7 +489,7 @@ mod tests {
         skip.v[0xC] = 0xC;
         skip.v[0xB] = 0xB;
         assert!(skip.execute(OpCode::SkipEqualRegister(0xC, 0xB)).is_ok());
-        assert_eq!(skip.program_counter, 0);
+        assert_eq!(skip.program_counter, 0x200 + 0);
 
         let mut not_skip = Chip8::new();
         not_skip.v[0xC] = 0xA;
@@ -497,7 +497,7 @@ mod tests {
         assert!(not_skip
             .execute(OpCode::SkipEqualRegister(0xC, 0xB))
             .is_ok());
-        assert_eq!(not_skip.program_counter, 2);
+        assert_eq!(not_skip.program_counter, 0x200 + 2);
     }
 
     #[test]
