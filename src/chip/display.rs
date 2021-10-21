@@ -34,6 +34,10 @@ impl Display {
         erased
     }
 
+    pub fn frame_buffer(&self) -> &[[u8; 64]; 32] {
+        &self.0
+    }
+
     fn width(&self) -> usize {
         self.0[0].len()
     }

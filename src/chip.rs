@@ -14,7 +14,7 @@ use rand::Rng;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Chip8 {
-    frame_buffer: Display,
+    display: Display,
     memory: Memory,
     v: Registers,
     stack: Stack,
@@ -27,7 +27,7 @@ pub struct Chip8 {
 impl Chip8 {
     pub fn new() -> Self {
         Self {
-            frame_buffer: Display::new(),
+            display: Display::new(),
             memory: Memory::new(),
             v: Registers::new(),
             stack: Stack::new(),
@@ -36,6 +36,16 @@ impl Chip8 {
             delay_timer: 0,
             sound_timer: 0,
         }
+    }
+
+    pub fn cycle(&mut self) -> Result<(), ()> {
+        let word = self.fetch();
+        let op = Self::decode(word);
+        self.execute(op)
+    }
+
+    pub fn frame_buffer(&self) -> &[[u8; 64]; 32] {
+        &self.display.frame_buffer()
     }
 
     fn fetch(&mut self) -> u16 {
@@ -55,7 +65,7 @@ impl Chip8 {
                 // TODO: Make this a possible error
             }
             OpCode::Clear => {
-                self.frame_buffer.clear();
+                self.display.clear();
             }
             OpCode::Return => {
                 let pc = self.stack.pop();
@@ -142,10 +152,10 @@ impl Chip8 {
                 // TODO:
                 //  This instruction was changed in CHIP-48 and SUPER-CHIP
                 //  This should be configurable
-                self.program_counter = addr + self.v[0] as u16;
+                self.program_counter = addr + u16::from(self.v[0]);
             }
             OpCode::Random(x, kk) => {
-                self.v[x] = self.generate_random_byte() & kk;
+                self.v[x] = Self::generate_random_byte() & kk;
             }
             OpCode::Draw(x, y, n) => {
                 let x = self.v[x] % 64;
@@ -153,8 +163,8 @@ impl Chip8 {
                 let mut pixel_changed = false;
 
                 for sy in 0..n {
-                    let byte = self.memory[self.index + sy as u16];
-                    pixel_changed = pixel_changed || self.frame_buffer.draw_byte(byte, x, y + sy);
+                    let byte = self.memory[self.index + u16::from(sy)];
+                    pixel_changed = pixel_changed || self.display.draw_byte(byte, x, y + sy);
                 }
 
                 self.set_vf(pixel_changed);
@@ -181,7 +191,7 @@ impl Chip8 {
                 self.sound_timer = self.v[x];
             }
             OpCode::AddIndexRegister(x) => {
-                let res = self.index + self.v[x] as u16;
+                let res = self.index + u16::from(self.v[x]);
                 let overflow_bit = res & 0x8;
                 self.set_vf(overflow_bit == 0x8);
                 self.index = res;
@@ -200,16 +210,16 @@ impl Chip8 {
                 // TODO: The behavior of self.index should be configurable
                 //  In premodern variations, the value of self.index was set to
                 //  self.index + x + 1
-                for offset in 0..(x + 1) {
-                    self.memory[self.index + offset as u16] = self.v[offset];
+                for offset in 0..=x {
+                    self.memory[self.index + u16::from(offset)] = self.v[offset];
                 }
             }
             OpCode::LoadAllRegisters(x) => {
                 // TODO: The behavior of self.index should be configurable
                 //  In premodern variations, the value of self.index was set to
                 //  self.index + x + 1
-                for offset in 0..(x + 1) {
-                    self.v[offset] = self.memory[self.index + offset as u16];
+                for offset in 0..=x {
+                    self.v[offset] = self.memory[self.index + u16::from(offset)];
                 }
             }
         }
@@ -221,7 +231,7 @@ impl Chip8 {
         self.v[0xf] = if cond { 1 } else { 0 };
     }
 
-    fn generate_random_byte(&self) -> u8 {
+    fn generate_random_byte() -> u8 {
         rand::thread_rng().gen::<u8>()
     }
 }
@@ -240,7 +250,7 @@ mod tests {
     #[test]
     fn clear() {
         let mut cpu = Chip8::new();
-        cpu.frame_buffer = Display::new_filled();
+        cpu.display = Display::new_filled();
         assert!(cpu.execute(OpCode::Clear).is_ok());
         assert_eq!(cpu, Chip8::new());
     }
@@ -511,7 +521,7 @@ mod tests {
         // so, I will just make sure that the CPU has a function for generating a random byte.
         let mut cpu = Chip8::new();
         assert!(cpu.execute(OpCode::Random(0x0, 0xFF)).is_ok());
-        let _byte = cpu.generate_random_byte();
+        let _byte = Chip8::generate_random_byte();
     }
 
     #[test]
