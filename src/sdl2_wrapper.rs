@@ -13,7 +13,7 @@ pub fn create_sdl_context() -> Result<sdl2::Sdl> {
 pub fn setup_canvas(sdl_context: &sdl2::Sdl) -> Result<Canvas<Window>> {
     let video = sdl_context
         .video()
-        .map_err(|e| Sdl2Error::UnableToBuildVideo(e))?;
+        .map_err(Sdl2Error::UnableToBuildVideo)?;
 
     let window = video
         .window(
@@ -34,7 +34,7 @@ pub fn setup_canvas(sdl_context: &sdl2::Sdl) -> Result<Canvas<Window>> {
     Ok(canvas)
 }
 
-pub fn draw_on_canvas(canvas: &mut Canvas<Window>, buffer: &FrameBuffer) {
+pub fn draw_on_canvas(canvas: &mut Canvas<Window>, buffer: &FrameBuffer) -> Result<()> {
     for (y, row) in buffer.iter().enumerate() {
         for (x, &col) in row.iter().enumerate() {
             let x = (x * SCALE) as u32;
@@ -47,16 +47,19 @@ pub fn draw_on_canvas(canvas: &mut Canvas<Window>, buffer: &FrameBuffer) {
             };
 
             canvas.set_draw_color(color);
-            let _ = canvas.fill_rect(sdl2::rect::Rect::new(
-                x as i32,
-                y as i32,
-                SCALE as u32,
-                SCALE as u32,
-            ));
+            canvas
+                .fill_rect(sdl2::rect::Rect::new(
+                    x as i32,
+                    y as i32,
+                    SCALE as u32,
+                    SCALE as u32,
+                ))
+                .map_err(Sdl2Error::UnableToDraw)?;
         }
     }
 
     canvas.present();
+    Ok(())
 }
 
 pub fn poll_input(event_pump: &mut sdl2::EventPump) -> (bool, [bool; 16]) {
@@ -104,6 +107,7 @@ pub enum Sdl2Error {
     UnableToBuildSdl(String),
     UnableToBuildVideo(String),
     UnableToBuildEventPump(String),
+    UnableToDraw(String),
 }
 
 impl std::fmt::Display for Sdl2Error {
@@ -112,6 +116,7 @@ impl std::fmt::Display for Sdl2Error {
             Self::UnableToBuildSdl(e) => format!("Unable to build SDL: {}", e),
             Self::UnableToBuildVideo(e) => format!("Unable to build SDL Context: {}", e),
             Self::UnableToBuildEventPump(e) => format!("Unable to build SDL Event Pump: {}", e),
+            Self::UnableToDraw(e) => format!("Unable to draw on SDL canvas: {}", e),
         };
 
         write!(f, "{}", error_msg)
@@ -119,4 +124,3 @@ impl std::fmt::Display for Sdl2Error {
 }
 
 impl std::error::Error for Sdl2Error {}
-
