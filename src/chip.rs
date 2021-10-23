@@ -1,4 +1,5 @@
 mod display;
+mod keyboard;
 mod memory;
 mod opcode;
 mod register;
@@ -6,6 +7,7 @@ mod stack;
 
 use display::Display;
 use memory::Memory;
+use keyboard::Keyboard;
 use opcode::OpCode;
 use register::Registers;
 use stack::Stack;
@@ -18,6 +20,7 @@ pub struct Chip8 {
     memory: Memory,
     v: Registers,
     stack: Stack,
+    input: Keyboard,
     index: u16,
     program_counter: u16,
     delay_timer: u8,
@@ -31,6 +34,7 @@ impl Chip8 {
             memory: Memory::new(),
             v: Registers::new(),
             stack: Stack::new(),
+            input: Keyboard::new(),
             index: 0,
             program_counter: 0x200,
             delay_timer: 0,
@@ -173,13 +177,15 @@ impl Chip8 {
 
                 self.set_vf(pixel_changed);
             }
-            OpCode::SkipKeyPressed(_x) => {
-                // TODO: Implement key systems
-                unimplemented!();
+            OpCode::SkipKeyPressed(x) => {
+                if self.input.is_key_pressed(x) {
+                    self.program_counter += 2;
+                }
             }
             OpCode::SkipKeyNotPressed(_x) => {
-                // TODO: Implement key systems
-                unimplemented!();
+                if !self.input.is_key_pressed(x) {
+                    self.program_counter += 2;
+                }
             }
             OpCode::LoadDelay(x) => {
                 self.v[x] = self.delay_timer;
