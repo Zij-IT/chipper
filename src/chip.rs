@@ -42,6 +42,7 @@ impl Chip8 {
     }
 
     pub fn cycle(&mut self) -> Result<(), ()> {
+        self.input.poll_input();
         let word = self.fetch();
         let op = Self::decode(word);
         self.execute(op)
@@ -189,9 +190,12 @@ impl Chip8 {
             OpCode::LoadDelay(x) => {
                 self.v[x] = self.delay_timer;
             }
-            OpCode::LoadNextKeyPress(_x) => {
-                // TODO: Implement key systems
-                unimplemented!();
+            OpCode::LoadNextKeyPress(x) => {
+                if let Some(key) = self.input.get_next_key() {
+                    self.v[x] = key;
+                } else {
+                    self.program_counter -= 2;
+                }
             }
             OpCode::SetDelayTimer(x) => {
                 self.delay_timer = self.v[x];

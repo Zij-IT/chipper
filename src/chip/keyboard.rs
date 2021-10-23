@@ -24,14 +24,6 @@ impl Keyboard {
         self.keys[key as usize]
     }
 
-    pub fn press_key(&mut self, key: u8) {
-        self.keys[key as usize] = true;
-    }
-
-    pub fn release_key(&mut self, key: u8) {
-        self.keys[key as usize] = false;
-    }
-
     pub fn poll_input(&mut self) {
         self.quit = self
             .events
@@ -47,6 +39,15 @@ impl Keyboard {
         for key in keys {
             self.keys[key as usize] = true;
         }
+    }
+
+    pub fn get_next_key(&self) -> Option<u8> {
+        self.keys
+            .iter()
+            .copied()
+            .zip(0_u8..)
+            .find(|(pressed, _idx)| *pressed)
+            .map(|(_pressed, idx)| idx)
     }
 
     fn translate_scancode(key: Scancode) -> Option<u8> {
