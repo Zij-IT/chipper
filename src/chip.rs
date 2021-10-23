@@ -54,8 +54,15 @@ impl Chip8 {
         self.display.get_frame_buffer()
     }
 
+    pub fn should_beep(&self) -> bool {
+        self.sound_timer > 0
+    }
+
     pub fn cycle(&mut self, keys: [bool; 16]) -> Result<()> {
         self.input.set_keys(keys);
+        self.delay_timer = self.delay_timer.saturating_sub(1);
+        self.sound_timer = self.sound_timer.saturating_sub(1);
+
         let word = self.fetch()?;
         let op = Self::decode(word)?;
         self.execute(op)

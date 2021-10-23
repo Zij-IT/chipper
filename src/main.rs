@@ -25,6 +25,13 @@ fn main() -> Result<()> {
         let (quit_signal, keys) = sdl.poll_input();
 
         chip8.cycle(keys)?;
+
+        if chip8.should_beep() {
+            sdl.beep();
+        } else {
+            sdl.stop_beep();
+        }
+
         sdl.draw_on_canvas(chip8.get_frame_buffer())?;
 
         std::thread::sleep(SLEEP_DURATION);
