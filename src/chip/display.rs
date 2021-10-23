@@ -80,10 +80,6 @@ impl Display {
         self.canvas.present();
     }
 
-    pub fn frame_buffer(&self) -> &[[u8; 64]; 32] {
-        &self.buffer
-    }
-
     fn width(&self) -> usize {
         WIDTH
     }
@@ -93,25 +89,18 @@ impl Display {
     }
 
     #[cfg(test)]
-    pub fn new_filled(sdl_context: &sdl2::Sdl) -> Self {
-        let video = sdl_context.video().unwrap();
-        let window = video
-            .window("title", (SCALE * WIDTH) as u32, (SCALE * HEIGHT) as u32)
-            .position_centered()
-            .opengl()
-            .build()
-            .unwrap();
-        let canvas = window.into_canvas().build().unwrap();
-        canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
-        canvas.clear();
-        canvas.present();
-
-        Self {
-            buffer: [[0xFF; 64]; 32],
-            canvas,
-        }
+    pub fn fill_buffer(&mut self) {
+        self.buffer = [[1; 64]; 32];
     }
 }
+
+impl PartialEq for Display {
+    fn eq(&self, other: &Self) -> bool {
+        self.buffer.eq(&other.buffer)
+    }
+}
+
+impl Eq for Display {}
 
 impl std::fmt::Debug for Display {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
