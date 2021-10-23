@@ -1,34 +1,61 @@
 use super::chip::FrameBuffer;
 use super::{CHIP8_HEIGHT, CHIP8_WIDTH, SCALE};
+
+use anyhow::Result;
 use sdl2::keyboard::Scancode;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
 
-pub enum Sdl2Errors {
-
+#[derive(Debug, PartialEq, Eq)]
+pub enum Sdl2Error {
+    UnableToBuildSdl(String),
+    UnableToBuildVideo(String),
+    UnableToBuildEventPump(String),
 }
 
-pub fn setup_canvas(sdl_context: &sdl2::Sdl) -> sdl2::render::Canvas<sdl2::video::Window> {
-    let video = sdl_context.video().unwrap();
+impl std::fmt::Display for Sdl2Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let error_msg = match self {
+            Self::UnableToBuildSdl(e) => format!("Unable to build SDL: {}", e),
+            Self::UnableToBuildVideo(e) => format!("Unable to build SDL Context: {}", e),
+            Self::UnableToBuildEventPump(e) => format!("Unable to build SDL Event Pump: {}", e),
+        };
+
+        write!(f, "{}", error_msg)
+    }
+}
+
+impl std::error::Error for Sdl2Error {}
+
+pub fn create_sdl_context() -> Result<sdl2::Sdl> {
+    sdl2::init().map_err(|e| Sdl2Error::UnableToBuildSdl(e).into())
+}
+
+pub fn setup_canvas(sdl_context: &sdl2::Sdl) -> Result<Canvas<Window>> {
+    let video = sdl_context
+        .video()
+        .map_err(|e| Sdl2Error::UnableToBuildVideo(e))?;
+
     let window = video
         .window(
-            "title",
+            "Chipper: Chip8 Emulator",
             (SCALE * CHIP8_WIDTH) as u32,
             (SCALE * CHIP8_HEIGHT) as u32,
         )
         .position_centered()
         .opengl()
-        .build()
-        .unwrap();
-    let mut canvas = window.into_canvas().build().unwrap();
+        .build()?;
+
+    let mut canvas = window.into_canvas().build()?;
+
     canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
     canvas.clear();
     canvas.present();
-    canvas
+
+    Ok(canvas)
 }
 
-pub fn draw_on_canvas(
-    canvas: &mut sdl2::render::Canvas<sdl2::video::Window>,
-    buffer: &FrameBuffer,
-) {
+pub fn draw_on_canvas(canvas: &mut Canvas<Window>, buffer: &FrameBuffer) {
     for (y, row) in buffer.iter().enumerate() {
         for (x, &col) in row.iter().enumerate() {
             let x = (x * SCALE) as u32;
