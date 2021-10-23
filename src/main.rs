@@ -2,7 +2,7 @@
 
 mod chip;
 
-use minifb::{ Key, Window, WindowOptions };
+use minifb::{Key, Window, WindowOptions};
 use std::time::{Duration, Instant};
 
 fn main() {
@@ -10,14 +10,8 @@ fn main() {
     let mut chip8 = chip::Chip8::new();
     chip8.load_rom(rom).unwrap();
 
-    let mut window = Window::new(
-            "Test - ESC to exit",
-            64,
-            32,
-            WindowOptions::default(),
-        )
+    let mut window = Window::new("Test - ESC to exit", 64, 32, WindowOptions::default())
         .unwrap_or_else(|e| panic!("{}", e));
-
 
     let mut last_instruction_run_time = Instant::now();
     let mut last_drawn_time = Instant::now();

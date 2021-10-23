@@ -10,16 +10,12 @@ pub struct Display {
 impl Display {
     pub fn new(sdl_context: &sdl2::Sdl) -> Self {
         let video = sdl_context.video().unwrap();
-        let window = video.
-                window(
-                        "title",
-                        (SCALE * WIDTH) as u32,
-                        (SCALE * HEIGHT) as u32,
-                )
-                .position_centered()
-                .opengl()
-                .build()
-                .unwrap();
+        let window = video
+            .window("title", (SCALE * WIDTH) as u32, (SCALE * HEIGHT) as u32)
+            .position_centered()
+            .opengl()
+            .build()
+            .unwrap();
         let canvas = window.into_canvas().build().unwrap();
         canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
         canvas.clear();
@@ -74,16 +70,12 @@ impl Display {
     #[cfg(test)]
     pub fn new_filled(sdl_context: &sdl2::Sdl) -> Self {
         let video = sdl_context.video().unwrap();
-        let window = video.
-                window(
-                        "title",
-                        (SCALE * WIDTH) as u32,
-                        (SCALE * HEIGHT) as u32,
-                )
-                .position_centered()
-                .opengl()
-                .build()
-                .unwrap();
+        let window = video
+            .window("title", (SCALE * WIDTH) as u32, (SCALE * HEIGHT) as u32)
+            .position_centered()
+            .opengl()
+            .build()
+            .unwrap();
         let canvas = window.into_canvas().build().unwrap();
         canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
         canvas.clear();
