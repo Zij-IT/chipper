@@ -34,7 +34,8 @@ impl Keyboard {
             .events
             .keyboard_state()
             .pressed_scancodes()
-            .filter_map(Self::translate_scancode);
+            .filter_map(Self::translate_scancode)
+            .collect::<Vec<_>>();
 
         for key in keys {
             self.keys[key as usize] = true;
