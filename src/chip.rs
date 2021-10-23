@@ -542,18 +542,25 @@ mod tests {
     }
 
     #[test]
-    fn draw() {
-        unimplemented!()
-    }
-
-    #[test]
     fn skip_key_pressed() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        let mut keys = [false; 16];
+        keys[0xA] = true;
+        cpu.input.set_keys(keys);
+
+        assert!(cpu.execute(OpCode::SkipKeyPressed(0xA)).is_ok());
+        assert_eq!(cpu.program_counter, 0x200 + 2);
     }
 
     #[test]
     fn skip_key_not_pressed() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        let mut keys = [false; 16];
+        keys[0xA] = true;
+        cpu.input.set_keys(keys);
+
+        assert!(cpu.execute(OpCode::SkipKeyNotPressed(0xA)).is_ok());
+        assert_eq!(cpu.program_counter, 0x200 + 0);
     }
 
     #[test]
@@ -566,7 +573,13 @@ mod tests {
 
     #[test]
     fn load_next_key_press() {
-        unimplemented!()
+        let mut cpu = Chip8::new();
+        let mut keys = [false; 16];
+        keys[0xA] = true;
+        cpu.input.set_keys(keys);
+
+        assert!(cpu.execute(OpCode::LoadNextKeyPress(0x0)).is_ok());
+        assert_eq!(cpu.v[0x0], 0xA);
     }
 
     #[test]
