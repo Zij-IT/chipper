@@ -41,8 +41,15 @@ impl Chip8 {
         }
     }
 
-    pub fn cycle(&mut self) -> Result<(), ()> {
+    pub fn draw_on_screen(&mut self) {
+        self.display.draw_on_canvas();
+    }
+
+    pub fn poll_input(&mut self) {
         self.input.poll_input();
+    }
+
+    pub fn cycle(&mut self) -> Result<(), ()> {
         let word = self.fetch();
         let op = Self::decode(word);
         self.execute(op)
@@ -54,6 +61,10 @@ impl Chip8 {
 
     pub fn load_rom(&mut self, rom: &[u8]) -> Result<(), ()> {
         self.memory.load_rom(rom)
+    }
+
+    pub fn should_quit(&self) -> bool {
+        self.input.should_quit()
     }
 
     fn fetch(&mut self) -> u16 {
