@@ -16,6 +16,7 @@ use stack::Stack;
 
 use anyhow::Result;
 use rand::Rng;
+use std::convert::TryFrom;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Chip8 {
@@ -56,7 +57,7 @@ impl Chip8 {
     pub fn cycle(&mut self, keys: [bool; 16]) -> Result<()> {
         self.input.set_keys(keys);
         let word = self.fetch()?;
-        let op = Self::decode(word);
+        let op = Self::decode(word)?;
         self.execute(op)
     }
 
@@ -66,8 +67,8 @@ impl Chip8 {
         Ok(next_instr)
     }
 
-    fn decode(op: u16) -> OpCode {
-        From::from(op)
+    fn decode(op: u16) -> Result<OpCode> {
+        TryFrom::try_from(op)
     }
 
     fn execute(&mut self, op: OpCode) -> Result<()> {

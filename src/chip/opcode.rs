@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub enum OpCode {
     SysAddr(u16),
@@ -37,9 +39,11 @@ pub enum OpCode {
     LoadAllRegisters(u8),
 }
 
-impl From<u16> for OpCode {
+impl TryFrom<u16> for OpCode {
+    type Error = anyhow::Error;
+
     #[allow(clippy::cast_possible_truncation)]
-    fn from(op: u16) -> Self {
+    fn try_from(op: u16) -> Result<Self, Self::Error> {
         let nibbles = (
             ((op & 0xF000) >> 12) as u8,
             ((op & 0x0F00) >> 8) as u8,
@@ -53,7 +57,7 @@ impl From<u16> for OpCode {
         let y = nibbles.2;
         let n = nibbles.3;
 
-        match nibbles {
+        Ok(match nibbles {
             (0x0, 0x0, 0xE, 0x0) => Self::Clear,
             (0x0, 0x0, 0xE, 0xE) => Self::Return,
             (0x0, _, _, _) => Self::SysAddr(nnn),
@@ -89,7 +93,22 @@ impl From<u16> for OpCode {
             (0xF, _, 0x3, 0x3) => Self::BinaryCodeConversion(x),
             (0xF, _, 0x5, 0x5) => Self::StoreAllRegisters(x),
             (0xF, _, 0x6, 0x5) => Self::LoadAllRegisters(x),
-            _ => panic!("'{:X}' is not a known opcode", op),
+            _ => return Err(OpCodeError::InvalidOp(op).into()),
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum OpCodeError {
+    InvalidOp(u16),
+}
+
+impl std::fmt::Display for OpCodeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidOp(op) => write!(f, "Invalid Operation: {}", op),
         }
     }
 }
+
+impl std::error::Error for OpCodeError {}
