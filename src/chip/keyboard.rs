@@ -5,9 +5,7 @@ pub struct Keyboard {
 
 impl Keyboard {
     pub fn new() -> Self {
-        Self {
-            keys: [false; 16],
-        }
+        Self { keys: [false; 16] }
     }
 
     pub fn is_key_pressed(&self, key: u8) -> bool {
