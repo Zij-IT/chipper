@@ -6,27 +6,6 @@ use sdl2::keyboard::Scancode;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Sdl2Error {
-    UnableToBuildSdl(String),
-    UnableToBuildVideo(String),
-    UnableToBuildEventPump(String),
-}
-
-impl std::fmt::Display for Sdl2Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let error_msg = match self {
-            Self::UnableToBuildSdl(e) => format!("Unable to build SDL: {}", e),
-            Self::UnableToBuildVideo(e) => format!("Unable to build SDL Context: {}", e),
-            Self::UnableToBuildEventPump(e) => format!("Unable to build SDL Event Pump: {}", e),
-        };
-
-        write!(f, "{}", error_msg)
-    }
-}
-
-impl std::error::Error for Sdl2Error {}
-
 pub fn create_sdl_context() -> Result<sdl2::Sdl> {
     sdl2::init().map_err(|e| Sdl2Error::UnableToBuildSdl(e).into())
 }
@@ -119,3 +98,25 @@ fn translate_scancode(key: Scancode) -> Option<u8> {
         _ => None,
     }
 }
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Sdl2Error {
+    UnableToBuildSdl(String),
+    UnableToBuildVideo(String),
+    UnableToBuildEventPump(String),
+}
+
+impl std::fmt::Display for Sdl2Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let error_msg = match self {
+            Self::UnableToBuildSdl(e) => format!("Unable to build SDL: {}", e),
+            Self::UnableToBuildVideo(e) => format!("Unable to build SDL Context: {}", e),
+            Self::UnableToBuildEventPump(e) => format!("Unable to build SDL Event Pump: {}", e),
+        };
+
+        write!(f, "{}", error_msg)
+    }
+}
+
+impl std::error::Error for Sdl2Error {}
+
