@@ -14,7 +14,6 @@ use stack::Stack;
 
 use rand::Rng;
 
-#[derive(PartialEq, Eq, Debug)]
 pub struct Chip8 {
     display: Display,
     memory: Memory,
@@ -28,9 +27,9 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
-    pub fn new() -> Self {
+    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
         Self {
-            display: Display::new(),
+            display: Display::new(sdl_context),
             memory: Memory::new(),
             v: Registers::new(),
             stack: Stack::new(),
@@ -182,7 +181,7 @@ impl Chip8 {
                     self.program_counter += 2;
                 }
             }
-            OpCode::SkipKeyNotPressed(_x) => {
+            OpCode::SkipKeyNotPressed(x) => {
                 if !self.input.is_key_pressed(x) {
                     self.program_counter += 2;
                 }
