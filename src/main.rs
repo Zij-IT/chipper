@@ -22,18 +22,18 @@ fn main() -> Result<()> {
     let mut canvas = setup_canvas(&sdl_context)?;
     let mut event_pump = sdl_context
         .event_pump()
-        .map_err(|e| Sdl2Error::UnableToBuildEventPump(e))?;
+        .map_err(Sdl2Error::UnableToBuildEventPump)?;
 
     let mut chip8 = Chip8::new();
-    let _ = chip8.load_rom(rom);
+    chip8.load_rom(rom)?;
 
     let mut quit = false;
     while !quit {
         let (quit_signal, keys) = poll_input(&mut event_pump);
         quit = quit_signal;
 
-        let _ = chip8.cycle(keys);
-        draw_on_canvas(&mut canvas, chip8.get_frame_buffer());
+        chip8.cycle(keys)?;
+        draw_on_canvas(&mut canvas, chip8.get_frame_buffer())?;
 
         std::thread::sleep(SLEEP_DURATION);
     }
