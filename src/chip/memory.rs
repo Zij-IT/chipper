@@ -17,7 +17,7 @@ impl Memory {
             .ok_or_else(|| MemoryError::InvalidMemoryAddress(addr).into())
     }
 
-    pub fn get_byte_mut(&self, addr: u16) -> Result<&mut u8> {
+    pub fn get_byte_mut(&mut self, addr: u16) -> Result<&mut u8> {
         self.0
             .get_mut(addr as usize)
             .ok_or_else(|| MemoryError::InvalidMemoryAddress(addr).into())
