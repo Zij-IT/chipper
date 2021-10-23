@@ -74,6 +74,14 @@ impl Keyboard {
     }
 }
 
+impl PartialEq for Keyboard {
+    fn eq(&self, other: &Self) -> bool {
+        self.quit == other.quit && self.keys == other.keys
+    }
+}
+
+impl Eq for Keyboard {}
+
 impl std::fmt::Debug for Keyboard {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Keyboard")
