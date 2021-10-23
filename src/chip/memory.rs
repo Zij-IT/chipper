@@ -1,5 +1,4 @@
-use std::ops::Index;
-use std::ops::IndexMut;
+use anyhow::Result;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Memory([u8; 4096]);
@@ -11,18 +10,34 @@ impl Memory {
         Self(mem)
     }
 
-    pub fn get_word(&self, addr: u16) -> u16 {
-        debug_assert!(addr < 4096);
-        (u16::from(self[addr]) << 8) | u16::from(self[addr + 1])
+    pub fn get_byte(&self, addr: u16) -> Result<u8> {
+        self.0
+            .get(addr as usize)
+            .copied()
+            .ok_or_else(|| MemoryError::InvalidMemoryAddress(addr).into())
     }
 
-    pub fn index_of_font_char(byte: u8) -> u16 {
-        u16::from(0x50 + (byte * 5))
+    pub fn get_byte_mut(&self, addr: u16) -> Result<&mut u8> {
+        self.0
+            .get_mut(addr as usize)
+            .ok_or_else(|| MemoryError::InvalidMemoryAddress(addr).into())
     }
 
-    pub fn load_rom(&mut self, rom: &[u8]) -> Result<(), ()> {
+    pub fn get_word(&self, addr: u16) -> Result<u16> {
+        Ok((u16::from(self.get_byte(addr)?) << 8) | u16::from(self.get_byte(addr + 1)?))
+    }
+
+    pub fn index_of_font_char(byte: u8) -> Result<u16> {
+        if byte < 0x10 {
+            Ok(u16::from(0x50 + (byte * 5)))
+        } else {
+            Err(MemoryError::InvalidChar(byte).into())
+        }
+    }
+
+    pub fn load_rom(&mut self, rom: &[u8]) -> Result<()> {
         if rom.len() >= (self.0.len() - 0x200) {
-            return Err(());
+            return Err(MemoryError::RomTooLarge(rom.len()).into());
         }
 
         for (i, byte) in rom.iter().copied().enumerate() {
@@ -59,18 +74,24 @@ impl Memory {
     }
 }
 
-impl Index<u16> for Memory {
-    type Output = u8;
+#[derive(Debug, PartialEq, Eq)]
+pub enum MemoryError {
+    RomTooLarge(usize),
+    InvalidMemoryAddress(u16),
+    InvalidChar(u8),
+}
 
-    fn index(&self, idx: u16) -> &Self::Output {
-        debug_assert!(idx < 4096);
-        &self.0[idx as usize]
+impl std::fmt::Display for MemoryError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let msg = match self {
+            Self::RomTooLarge(rom_len) => format!("Rom is too large: {}", rom_len),
+            Self::InvalidMemoryAddress(addr) => format!("Invalid memory address: {}", addr),
+            Self::InvalidChar(byte) => format!("Attempting to get index of invalid char: {}", byte),
+        };
+
+        write!(f, "{}", msg)
     }
 }
 
-impl IndexMut<u16> for Memory {
-    fn index_mut(&mut self, idx: u16) -> &mut Self::Output {
-        debug_assert!(idx < 4096);
-        &mut self.0[idx as usize]
-    }
-}
+impl std::error::Error for MemoryError {}
+

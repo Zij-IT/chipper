@@ -14,6 +14,7 @@ use opcode::OpCode;
 use register::Registers;
 use stack::Stack;
 
+use anyhow::Result;
 use rand::Rng;
 
 #[derive(PartialEq, Eq, Debug)]
@@ -44,7 +45,7 @@ impl Chip8 {
         }
     }
 
-    pub fn load_rom(&mut self, rom: &[u8]) -> Result<(), ()> {
+    pub fn load_rom(&mut self, rom: &[u8]) -> Result<()> {
         self.memory.load_rom(rom)
     }
 
@@ -52,24 +53,24 @@ impl Chip8 {
         self.display.get_frame_buffer()
     }
 
-    pub fn cycle(&mut self, keys: [bool; 16]) -> Result<(), ()> {
+    pub fn cycle(&mut self, keys: [bool; 16]) -> Result<()> {
         self.input.set_keys(keys);
-        let word = self.fetch();
+        let word = self.fetch()?;
         let op = Self::decode(word);
         self.execute(op)
     }
 
-    fn fetch(&mut self) -> u16 {
-        let next_instr = self.memory.get_word(self.program_counter);
+    fn fetch(&mut self) -> Result<u16> {
+        let next_instr = self.memory.get_word(self.program_counter)?;
         self.program_counter += 2;
-        next_instr
+        Ok(next_instr)
     }
 
     fn decode(op: u16) -> OpCode {
         From::from(op)
     }
 
-    fn execute(&mut self, op: OpCode) -> Result<(), ()> {
+    fn execute(&mut self, op: OpCode) -> Result<()> {
         match op {
             OpCode::SysAddr(_addr) => {
                 // Unimplemented on most machines, this is purposefully skipped
@@ -174,7 +175,7 @@ impl Chip8 {
                 let mut pixel_changed = false;
 
                 for sy in 0..n {
-                    let byte = self.memory[self.index + u16::from(sy)];
+                    let byte = self.memory.get_byte(self.index + u16::from(sy))?;
                     pixel_changed = pixel_changed || self.display.draw_byte(byte, x, y + sy);
                 }
 
@@ -213,21 +214,20 @@ impl Chip8 {
                 self.index = res;
             }
             OpCode::IndexAtSprite(x) => {
-                debug_assert!(x < 0x10);
-                self.index = Memory::index_of_font_char(x);
+                self.index = Memory::index_of_font_char(x)?;
             }
             OpCode::BinaryCodeConversion(x) => {
                 let value = self.v[x];
-                self.memory[self.index] = value / 100;
-                self.memory[self.index + 1] = (value % 100) / 10;
-                self.memory[self.index + 2] = value % 10;
+                *self.memory.get_byte_mut(self.index)? = value / 100;
+                *self.memory.get_byte_mut(self.index + 1)? = (value % 100) / 10;
+                *self.memory.get_byte_mut(self.index + 2)? = value % 10;
             }
             OpCode::StoreAllRegisters(x) => {
                 // TODO: The behavior of self.index should be configurable
                 //  In premodern variations, the value of self.index was set to
                 //  self.index + x + 1
                 for offset in 0..=x {
-                    self.memory[self.index + u16::from(offset)] = self.v[offset];
+                    *self.memory.get_byte_mut(self.index + u16::from(offset))? = self.v[offset];
                 }
             }
             OpCode::LoadAllRegisters(x) => {
@@ -235,7 +235,7 @@ impl Chip8 {
                 //  In premodern variations, the value of self.index was set to
                 //  self.index + x + 1
                 for offset in 0..=x {
-                    self.v[offset] = self.memory[self.index + u16::from(offset)];
+                    self.v[offset] = self.memory.get_byte(self.index + u16::from(offset))?;
                 }
             }
         }
@@ -258,7 +258,7 @@ mod tests {
 
     fn new_emu() -> Chip8 {
         let sdl_context = sdl2::init().unwrap();
-        Chip8::new(&sdl_context)
+        Chip8::new()
     }
 
     #[test]
