@@ -73,3 +73,12 @@ impl Keyboard {
         }
     }
 }
+
+impl std::fmt::Debug for Keyboard {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Keyboard")
+            .field("quit", &self.quit)
+            .field("keys", &self.keys)
+            .finish()
+    }
+}
