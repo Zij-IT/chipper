@@ -56,7 +56,7 @@ impl Chip8 {
     }
 
     pub fn frame_buffer(&self) -> &[[u8; 64]; 32] {
-        &self.display.frame_buffer()
+        self.display.frame_buffer()
     }
 
     pub fn load_rom(&mut self, rom: &[u8]) -> Result<(), ()> {
