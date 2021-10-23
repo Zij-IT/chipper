@@ -2,40 +2,22 @@
 
 mod chip;
 
-use minifb::{Key, Window, WindowOptions};
-use std::time::{Duration, Instant};
+use std::time::Duration;
+
+const SLEEP_DURATION: Duration = Duration::from_millis(2);
 
 fn main() {
     let rom = include_bytes!("../test_opcode.ch8");
-    let mut chip8 = chip::Chip8::new();
-    chip8.load_rom(rom).unwrap();
 
-    let mut window = Window::new("Test - ESC to exit", 64, 32, WindowOptions::default())
-        .unwrap_or_else(|e| panic!("{}", e));
+    let sdl_context = sdl2::init().unwrap();
 
-    let mut last_instruction_run_time = Instant::now();
-    let mut last_drawn_time = Instant::now();
+    let mut chip8 = chip::Chip8::new(&sdl_context);
+    let _ = chip8.load_rom(rom);
 
-    window.limit_update_rate(Some(Duration::from_micros(16600)));
-
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        if Instant::now() - last_instruction_run_time > Duration::from_millis(2) {
-            chip8.cycle().unwrap();
-            last_instruction_run_time = Instant::now();
-        }
-
-        if Instant::now() - last_drawn_time > Duration::from_millis(10) {
-            let chip_buffer = chip8
-                .frame_buffer()
-                .iter()
-                .flatten()
-                .copied()
-                .map(|x| if x == 1 { 0xFFFF_FFFF_u32 } else { 0x0_u32 })
-                .collect::<Vec<_>>();
-
-            window.update_with_buffer(&chip_buffer, 64, 32).unwrap();
-
-            last_drawn_time = Instant::now();
-        }
+    while !chip8.should_quit() {
+        chip8.poll_input();
+        let _ = chip8.cycle();
+        chip8.draw_on_screen();
+        std::thread::sleep(SLEEP_DURATION);
     }
 }
