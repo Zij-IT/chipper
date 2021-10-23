@@ -3,7 +3,7 @@ const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
 
 pub struct Display {
-    display: [[u8; WIDTH]; HEIGHT],
+    buffer: [[u8; WIDTH]; HEIGHT],
     canvas: sdl2::render::Canvas<sdl2::video::Window>,
 }
 
@@ -22,13 +22,13 @@ impl Display {
         canvas.present();
 
         Self {
-            display: [[0; 64]; 32],
+            buffer: [[0; 64]; 32],
             canvas,
         }
     }
 
     pub fn clear(&mut self) {
-        self.display = [[0; 64]; 32];
+        self.buffer = [[0; 64]; 32];
     }
 
     pub fn draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
@@ -43,11 +43,11 @@ impl Display {
             }
 
             let bit = (byte & 0x80) >> 7;
-            let prev_bit = self.display[coord_y][coord_x];
+            let prev_bit = self.buffer[coord_y][coord_x];
 
-            self.display[coord_y][coord_x] ^= bit;
+            self.buffer[coord_y][coord_x] ^= bit;
 
-            erased = erased || (prev_bit == 1 && self.display[coord_y][coord_x] == 0);
+            erased = erased || (prev_bit == 1 && self.buffer[coord_y][coord_x] == 0);
             coord_x += 1;
             byte <<= 1;
         }
@@ -56,7 +56,7 @@ impl Display {
     }
 
     pub fn draw_on_canvas(&mut self) {
-        for (y, row) in self.display.iter().enumerate() {
+        for (y, row) in self.buffer.iter().enumerate() {
             for (x, &col) in row.iter().enumerate() {
                 let x = (x * SCALE) as u32;
                 let y = (y * SCALE) as u32;
@@ -81,7 +81,7 @@ impl Display {
     }
 
     pub fn frame_buffer(&self) -> &[[u8; 64]; 32] {
-        &self.display
+        &self.buffer
     }
 
     fn width(&self) -> usize {
@@ -107,8 +107,16 @@ impl Display {
         canvas.present();
 
         Self {
-            display: [[0xFF; 64]; 32],
+            buffer: [[0xFF; 64]; 32],
             canvas,
         }
+    }
+}
+
+impl std::fmt::Debug for Display {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Display")
+            .field("buffer", &self.buffer)
+            .finish()
     }
 }
