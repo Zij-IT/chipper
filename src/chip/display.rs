@@ -1,44 +1,32 @@
-const SCALE: usize = 20;
-const WIDTH: usize = 64;
-const HEIGHT: usize = 32;
+use crate::CHIP8_HEIGHT;
+use crate::CHIP8_WIDTH;
 
+pub type FrameBuffer = [[u8; CHIP8_WIDTH]; CHIP8_HEIGHT];
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct Display {
-    buffer: [[u8; WIDTH]; HEIGHT],
-    canvas: sdl2::render::Canvas<sdl2::video::Window>,
+    buffer: FrameBuffer,
 }
 
 impl Display {
-    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
-        let video = sdl_context.video().unwrap();
-        let window = video
-            .window("title", (SCALE * WIDTH) as u32, (SCALE * HEIGHT) as u32)
-            .position_centered()
-            .opengl()
-            .build()
-            .unwrap();
-        let mut canvas = window.into_canvas().build().unwrap();
-        canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
-        canvas.clear();
-        canvas.present();
-
+    pub fn new() -> Self {
         Self {
-            buffer: [[0; 64]; 32],
-            canvas,
+            buffer: [[0; CHIP8_WIDTH]; CHIP8_HEIGHT],
         }
     }
 
     pub fn clear(&mut self) {
-        self.buffer = [[0; 64]; 32];
+        *self = Self::new();
     }
 
     pub fn draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
-        let mut coord_x = x as usize % self.width();
-        let coord_y = y as usize % self.height();
+        let mut coord_x = x as usize % CHIP8_WIDTH;
+        let coord_y = y as usize % CHIP8_HEIGHT;
         let mut erased = false;
         let mut byte = byte;
 
         for _ in 0..8 {
-            if coord_x >= self.width() {
+            if coord_x >= CHIP8_WIDTH {
                 break;
             }
 
@@ -55,57 +43,12 @@ impl Display {
         erased
     }
 
-    pub fn draw_on_canvas(&mut self) {
-        for (y, row) in self.buffer.iter().enumerate() {
-            for (x, &col) in row.iter().enumerate() {
-                let x = (x * SCALE) as u32;
-                let y = (y * SCALE) as u32;
-
-                let color = if col == 0 {
-                    sdl2::pixels::Color::RGB(0, 0, 0)
-                } else {
-                    sdl2::pixels::Color::RGB(0xFF, 0xFF, 0xFF)
-                };
-
-                self.canvas.set_draw_color(color);
-                let _ = self.canvas.fill_rect(sdl2::rect::Rect::new(
-                    x as i32,
-                    y as i32,
-                    SCALE as u32,
-                    SCALE as u32,
-                ));
-            }
-        }
-
-        self.canvas.present();
-    }
-
-    fn width(&self) -> usize {
-        WIDTH
-    }
-
-    fn height(&self) -> usize {
-        HEIGHT
+    pub fn get_frame_buffer(&self) -> &FrameBuffer {
+        &self.buffer
     }
 
     #[cfg(test)]
     pub fn fill_buffer(&mut self) {
         self.buffer = [[1; 64]; 32];
-    }
-}
-
-impl PartialEq for Display {
-    fn eq(&self, other: &Self) -> bool {
-        self.buffer.eq(&other.buffer)
-    }
-}
-
-impl Eq for Display {}
-
-impl std::fmt::Debug for Display {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Display")
-            .field("buffer", &self.buffer)
-            .finish()
     }
 }

@@ -5,6 +5,8 @@ mod opcode;
 mod register;
 mod stack;
 
+pub use display::FrameBuffer;
+
 use display::Display;
 use keyboard::Keyboard;
 use memory::Memory;
@@ -28,13 +30,13 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
-    pub fn new(sdl_context: &sdl2::Sdl) -> Self {
+    pub fn new() -> Self {
         Self {
-            display: Display::new(sdl_context),
+            display: Display::new(),
             memory: Memory::new(),
             v: Registers::new(),
             stack: Stack::new(),
-            input: Keyboard::new(sdl_context),
+            input: Keyboard::new(),
             index: 0,
             program_counter: 0x200,
             delay_timer: 0,
@@ -46,19 +48,12 @@ impl Chip8 {
         self.memory.load_rom(rom)
     }
 
-    pub fn poll_input(&mut self) {
-        self.input.poll_input();
+    pub fn get_frame_buffer(&mut self) -> &FrameBuffer {
+        self.display.get_frame_buffer()
     }
 
-    pub fn should_quit(&self) -> bool {
-        self.input.should_quit()
-    }
-
-    pub fn draw_on_screen(&mut self) {
-        self.display.draw_on_canvas();
-    }
-
-    pub fn cycle(&mut self) -> Result<(), ()> {
+    pub fn cycle(&mut self, keys: [bool; 16]) -> Result<(), ()> {
+        self.input.set_keys(keys);
         let word = self.fetch();
         let op = Self::decode(word);
         self.execute(op)
