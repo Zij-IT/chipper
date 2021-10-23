@@ -6,8 +6,8 @@ mod register;
 mod stack;
 
 use display::Display;
-use memory::Memory;
 use keyboard::Keyboard;
+use memory::Memory;
 use opcode::OpCode;
 use register::Registers;
 use stack::Stack;
@@ -33,7 +33,7 @@ impl Chip8 {
             memory: Memory::new(),
             v: Registers::new(),
             stack: Stack::new(),
-            input: Keyboard::new(),
+            input: Keyboard::new(sdl_context),
             index: 0,
             program_counter: 0x200,
             delay_timer: 0,
