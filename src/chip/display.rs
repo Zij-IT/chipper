@@ -16,7 +16,7 @@ impl Display {
             .opengl()
             .build()
             .unwrap();
-        let canvas = window.into_canvas().build().unwrap();
+        let mut canvas = window.into_canvas().build().unwrap();
         canvas.set_draw_color(sdl2::pixels::Color::RGB(0, 0, 0));
         canvas.clear();
         canvas.present();
@@ -53,6 +53,31 @@ impl Display {
         }
 
         erased
+    }
+
+    pub fn draw_on_canvas(&mut self) {
+        for (y, row) in self.display.iter().enumerate() {
+            for (x, &col) in row.iter().enumerate() {
+                let x = (x * SCALE) as u32;
+                let y = (y * SCALE) as u32;
+
+                let color = if col == 0 {
+                    sdl2::pixels::Color::RGB(0, 0, 0)
+                } else {
+                    sdl2::pixels::Color::RGB(0xFF, 0xFF, 0xFF)
+                };
+
+                self.canvas.set_draw_color(color);
+                let _ = self.canvas.fill_rect(sdl2::rect::Rect::new(
+                    x as i32,
+                    y as i32,
+                    SCALE as u32,
+                    SCALE as u32,
+                ));
+            }
+        }
+
+        self.canvas.present();
     }
 
     pub fn frame_buffer(&self) -> &[[u8; 64]; 32] {
