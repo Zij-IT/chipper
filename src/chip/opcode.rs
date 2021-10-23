@@ -106,7 +106,7 @@ pub enum OpCodeError {
 impl std::fmt::Display for OpCodeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InvalidOp(op) => write!(f, "Invalid Operation: {}", op),
+            Self::InvalidOp(op) => write!(f, "Invalid Operation: 0x{:X}", op),
         }
     }
 }
