@@ -14,7 +14,7 @@ use stack::Stack;
 
 use rand::Rng;
 
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Chip8 {
     display: Display,
     memory: Memory,
@@ -52,10 +52,6 @@ impl Chip8 {
 
     pub fn should_quit(&self) -> bool {
         self.input.should_quit()
-    }
-
-    pub fn frame_buffer(&self) -> &[[u8; 64]; 32] {
-        self.display.frame_buffer()
     }
 
     pub fn draw_on_screen(&mut self) {
@@ -280,7 +276,7 @@ mod tests {
     #[test]
     fn clear() {
         let mut cpu = new_emu();
-        cpu.display = Display::new_filled();
+        cpu.display.fill_buffer();
         assert!(cpu.execute(OpCode::Clear).is_ok());
         assert_eq!(cpu, new_emu());
     }
