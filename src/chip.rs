@@ -4,10 +4,12 @@ mod memory;
 mod opcode;
 mod register;
 mod stack;
+mod clock;
 
 pub use display::FrameBuffer;
 
 use display::Display;
+use clock::Clock;
 use keyboard::Keyboard;
 use memory::Memory;
 use opcode::OpCode;
@@ -50,18 +52,43 @@ impl Chip8 {
         self.memory.load_rom(rom)
     }
 
-    pub fn get_frame_buffer(&mut self) -> &FrameBuffer {
-        self.display.get_frame_buffer()
+    pub fn run(&mut self, sdl: &mut super::Sdl2Wrapper) -> Result<()> {
+        let mut cpu_clock = Clock::new(700.0);
+        let mut delay_clock = Clock::new(60.0);
+        let mut sound_clock = Clock::new(60.0);
+
+        loop {
+            let (quit_signal, keys) = sdl.poll_input();
+
+            if delay_clock.tick() {
+                self.delay_timer = self.delay_timer.saturating_sub(1);
+            }
+
+            if sound_clock.tick() {
+                self.sound_timer = self.sound_timer.saturating_sub(1);
+                if self.should_beep() {
+                    sdl.beep();
+                } else {
+                    sdl.stop_beep();
+                }
+            }
+
+            if cpu_clock.tick() {
+                self.cycle(keys)?;
+                sdl.draw_on_canvas(self.get_frame_buffer())?;
+            }
+
+            if quit_signal {
+                break;
+            }
+        }
+
+        Ok(())
     }
 
-    pub fn should_beep(&self) -> bool {
-        self.sound_timer > 0
-    }
 
-    pub fn cycle(&mut self, keys: [bool; 16]) -> Result<()> {
+    fn cycle(&mut self, keys: [bool; 16]) -> Result<()> {
         self.input.set_keys(keys);
-        self.delay_timer = self.delay_timer.saturating_sub(1);
-        self.sound_timer = self.sound_timer.saturating_sub(1);
 
         let word = self.fetch()?;
         let op = Self::decode(word)?;
@@ -257,6 +284,14 @@ impl Chip8 {
 
     fn generate_random_byte() -> u8 {
         rand::thread_rng().gen::<u8>()
+    }
+
+    fn should_beep(&self) -> bool {
+        self.sound_timer > 0
+    }
+
+    fn get_frame_buffer(&mut self) -> &FrameBuffer {
+        self.display.get_frame_buffer()
     }
 }
 
