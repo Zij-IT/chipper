@@ -19,26 +19,12 @@ impl Display {
         *self = Self::new();
     }
 
-    pub fn draw_byte(&mut self, byte: u8, x: u8, y: u8) -> bool {
-        let mut coord_x = x as usize % CHIP8_WIDTH;
-        let coord_y = y as usize % CHIP8_HEIGHT;
-        let mut erased = false;
-        let mut byte = byte;
+    pub fn draw_pixel(&mut self, x: usize, y: usize, pixel: u8) -> bool {
+        let x = x % CHIP8_WIDTH;
+        let y = y % CHIP8_HEIGHT;
 
-        for _ in 0..8 {
-            if coord_x >= CHIP8_WIDTH {
-                break;
-            }
-
-            let bit = (byte & 0x80) >> 7;
-            let prev_bit = self.buffer[coord_y][coord_x];
-
-            self.buffer[coord_y][coord_x] ^= bit;
-
-            erased = erased || (prev_bit == 1 && self.buffer[coord_y][coord_x] == 0);
-            coord_x += 1;
-            byte <<= 1;
-        }
+        let erased = (self.buffer[y][x] & pixel) == 1;
+        self.buffer[y][x] ^= pixel;
 
         erased
     }

@@ -218,16 +218,28 @@ impl Chip8 {
                 self.v[x] = Self::generate_random_byte() & kk;
             }
             OpCode::Draw(x, y, n) => {
-                let x = self.v[x] % 64;
-                let y = self.v[y] % 32;
-                let mut pixel_changed = false;
+                let x = self.v[x] as usize;
+                let y = self.v[y] as usize;
+                let h = n as usize;
 
-                for sy in 0..n {
-                    let byte = self.memory.get_byte(self.index + u16::from(sy))?;
-                    pixel_changed = pixel_changed || self.display.draw_byte(byte, x, y + sy);
+                let mut pixel_erased = false;
+
+                for oy in 0..h {
+                    let px_y = y + oy;
+                    if !self.settings.vertical_wrap && px_y >= crate::CHIP8_HEIGHT {
+                        break;
+                    }
+
+                    let byte = self.memory.get_byte(self.index + oy as u16)?;
+                    for ox in 0..8 {
+                        let pixel = (byte >> 7 - ox) & 1;
+                        let px_x = x + ox;
+
+                        pixel_erased |= self.display.draw_pixel(px_x, px_y, pixel);
+                    }
                 }
 
-                self.set_vf(pixel_changed);
+                self.set_vf(pixel_erased);
             }
             OpCode::SkipKeyPressed(x) => {
                 if self.input.is_key_pressed(x) {
