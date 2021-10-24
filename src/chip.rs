@@ -252,10 +252,12 @@ impl Chip8 {
                 self.sound_timer = self.v[x];
             }
             OpCode::AddIndexRegister(x) => {
-                let res = self.index + u16::from(self.v[x]);
-                let overflow_bit = res & 0x8;
-                self.set_vf(overflow_bit == 0x8);
-                self.index = res;
+                let (addr, carry) = self.index.overflowing_add(u16::from(self.v[x]));
+                self.index = addr;
+
+                if self.settings.index_overflow {
+                    self.set_vf(carry);
+                }
             }
             OpCode::IndexAtSprite(x) => {
                 self.index = Memory::index_of_font_char(x)?;
