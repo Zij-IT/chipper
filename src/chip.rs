@@ -1,3 +1,4 @@
+mod settings;
 mod display;
 mod keyboard;
 mod memory;
@@ -8,6 +9,7 @@ mod clock;
 
 pub use display::FrameBuffer;
 
+use settings::Settings;
 use display::Display;
 use clock::Clock;
 use keyboard::Keyboard;
@@ -22,6 +24,7 @@ use std::convert::TryFrom;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Chip8 {
+    settings: Settings,
     display: Display,
     memory: Memory,
     v: Registers,
@@ -36,6 +39,7 @@ pub struct Chip8 {
 impl Chip8 {
     pub fn new() -> Self {
         Self {
+            settings: Settings::new(),
             display: Display::new(),
             memory: Memory::new(),
             v: Registers::new(),
