@@ -205,10 +205,14 @@ impl Chip8 {
                 self.index = addr;
             }
             OpCode::JumpWithOffset(addr) => {
-                // TODO:
-                //  This instruction was changed in CHIP-48 and SUPER-CHIP
-                //  This should be configurable
-                self.program_counter = addr + u16::from(self.v[0]);
+                let reg_value = if self.settings.jump_quirk {
+                    let x = (addr & 0x0F00) >> 8;
+                    self.v[x as u8]
+                } else {
+                    self.v[0]
+                };
+
+                self.program_counter = addr + u16::from(reg_value);
             }
             OpCode::Random(x, kk) => {
                 self.v[x] = Self::generate_random_byte() & kk;
@@ -269,19 +273,21 @@ impl Chip8 {
                 *self.memory.get_byte_mut(self.index + 2)? = value % 10;
             }
             OpCode::StoreAllRegisters(x) => {
-                // TODO: The behavior of self.index should be configurable
-                //  In premodern variations, the value of self.index was set to
-                //  self.index + x + 1
                 for offset in 0..=x {
                     *self.memory.get_byte_mut(self.index + u16::from(offset))? = self.v[offset];
                 }
+
+                if self.settings.load_store_quirk {
+                    self.index += u16::from(x) + 1;
+                }
             }
             OpCode::LoadAllRegisters(x) => {
-                // TODO: The behavior of self.index should be configurable
-                //  In premodern variations, the value of self.index was set to
-                //  self.index + x + 1
                 for offset in 0..=x {
                     self.v[offset] = self.memory.get_byte(self.index + u16::from(offset))?;
+                }
+
+                if self.settings.load_store_quirk {
+                    self.index += u16::from(x) + 1;
                 }
             }
         }
