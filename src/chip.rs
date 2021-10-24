@@ -173,10 +173,11 @@ impl Chip8 {
                 self.set_vf(!under); // VF is set if underflow did not occur
                 self.v[x] = res;
             }
-            OpCode::ShiftRightRegister(x, _y) => {
-                // TODO:
-                //  This instruction has a step that was changed in CHIP-48 and SUPER-CHIP
-                //  This should be configurable
+            OpCode::ShiftRightRegister(x, y) => {
+                if self.settings.shift_quirk {
+                    self.v[x] = self.v[y];
+                }
+
                 let shifted_bit = self.v[x] & 0x1;
                 self.set_vf(shifted_bit == 0x1);
                 self.v[x] >>= 1;
@@ -186,7 +187,11 @@ impl Chip8 {
                 self.set_vf(!under);
                 self.v[x] = res;
             }
-            OpCode::ShiftLeftRegister(x, _y) => {
+            OpCode::ShiftLeftRegister(x, y) => {
+                if self.settings.shift_quirk {
+                    self.v[x] = self.v[y];
+                }
+
                 let bit = self.v[x] & 0x80;
                 self.set_vf(bit == 0x80);
                 self.v[x] <<= 1;
