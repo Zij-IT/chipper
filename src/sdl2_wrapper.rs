@@ -76,11 +76,11 @@ impl Sdl2Wrapper {
     }
 
     pub fn beep(&mut self) {
-        self.audio_device.resume()
+        self.audio_device.resume();
     }
 
     pub fn stop_beep(&mut self) {
-        self.audio_device.pause()
+        self.audio_device.pause();
     }
 
     fn create_sdl_context() -> Result<Sdl> {
