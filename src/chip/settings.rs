@@ -8,6 +8,7 @@ pub struct Settings {
     pub shift_quirk: bool,
     pub index_overflow: bool,
     pub vertical_wrap: bool,
+    pub jump_quirk: bool,
 }
 
 impl Settings {
@@ -18,9 +19,10 @@ impl Settings {
             delay_freq: 60,
             sound_freq: 60,
             load_store_quirk: false,
-            shift_quirk: true,
             index_overflow: false,
             vertical_wrap: false,
+            shift_quirk: true,
+            jump_quirk: false,
         }
     }
 }
