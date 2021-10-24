@@ -1,21 +1,21 @@
-mod settings;
+mod clock;
 mod display;
 mod keyboard;
 mod memory;
 mod opcode;
 mod register;
+mod settings;
 mod stack;
-mod clock;
 
 pub use display::FrameBuffer;
 
-use settings::Settings;
-use display::Display;
 use clock::Clock;
+use display::Display;
 use keyboard::Keyboard;
 use memory::Memory;
 use opcode::OpCode;
 use register::Registers;
+use settings::Settings;
 use stack::Stack;
 
 use anyhow::Result;
@@ -89,7 +89,6 @@ impl Chip8 {
 
         Ok(())
     }
-
 
     fn cycle(&mut self, keys: [bool; 16]) -> Result<()> {
         self.input.set_keys(keys);
