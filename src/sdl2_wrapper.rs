@@ -1,6 +1,7 @@
 use super::chip::FrameBuffer;
 use super::{CHIP8_HEIGHT, CHIP8_WIDTH, SCALE};
 
+use anyhow::Error;
 use anyhow::Result;
 
 use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
@@ -21,11 +22,13 @@ impl Sdl2Wrapper {
         let sdl_context = Self::create_sdl_context()?;
         let audio_device = Self::setup_audio_device(&sdl_context)?;
         let canvas = Self::setup_canvas(&sdl_context)?;
-        let event_pump = sdl_context
-            .event_pump()
-            .map_err(Sdl2Error::UnableToBuildEventPump)?;
+        let event_pump = sdl_context.event_pump().map_err(Error::msg)?;
 
-        Ok(Self { canvas, event_pump, audio_device })
+        Ok(Self {
+            canvas,
+            event_pump,
+            audio_device,
+        })
     }
 
     pub fn draw_on_canvas(&mut self, buffer: &FrameBuffer) -> Result<()> {
@@ -48,7 +51,7 @@ impl Sdl2Wrapper {
                         SCALE as u32,
                         SCALE as u32,
                     ))
-                    .map_err(Sdl2Error::UnableToDraw)?;
+                    .map_err(Error::msg)?;
             }
         }
 
@@ -84,7 +87,7 @@ impl Sdl2Wrapper {
     }
 
     fn create_sdl_context() -> Result<Sdl> {
-        sdl2::init().map_err(|e| Sdl2Error::UnableToBuildSdl(e).into())
+        sdl2::init().map_err(Error::msg)
     }
 
     fn setup_audio_device(sdl_context: &sdl2::Sdl) -> Result<AudioDevice<SquareWave>> {
@@ -97,19 +100,18 @@ impl Sdl2Wrapper {
         };
 
         let device = audio_subsystem
-            .open_playback(None, &desired_spec, |spec| {
-                SquareWave {
-                    phase_inc: 240.0 / spec.freq as f32,
-                    phase: 0.0,
-                    volume: 0.25,
-                }
-            }).map_err(Sdl2Error::UnableToBuildAudio)?;
+            .open_playback(None, &desired_spec, |spec| SquareWave {
+                phase_inc: 240.0 / spec.freq as f32,
+                phase: 0.0,
+                volume: 0.25,
+            })
+            .map_err(Error::msg)?;
 
         Ok(device)
     }
 
     fn setup_canvas(sdl_context: &sdl2::Sdl) -> Result<Canvas<Window>> {
-        let video = sdl_context.video().map_err(Sdl2Error::UnableToBuildVideo)?;
+        let video = sdl_context.video().map_err(Error::msg)?;
 
         let window = video
             .window(
@@ -164,33 +166,12 @@ impl AudioCallback for SquareWave {
 
     fn callback(&mut self, out: &mut [f32]) {
         for x in out {
-            *x = if self.phase < 0.5 { self.volume } else { -self.volume };
+            *x = if self.phase < 0.5 {
+                self.volume
+            } else {
+                -self.volume
+            };
             self.phase = (self.phase + self.phase_inc) % 1.0;
         }
     }
 }
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum Sdl2Error {
-    UnableToBuildSdl(String),
-    UnableToBuildVideo(String),
-    UnableToBuildEventPump(String),
-    UnableToBuildAudio(String),
-    UnableToDraw(String),
-}
-
-impl std::fmt::Display for Sdl2Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let error_msg = match self {
-            Self::UnableToBuildSdl(e) => format!("Unable to build SDL: {}", e),
-            Self::UnableToBuildVideo(e) => format!("Unable to build SDL Context: {}", e),
-            Self::UnableToBuildEventPump(e) => format!("Unable to build SDL Event Pump: {}", e),
-            Self::UnableToBuildAudio(e) => format!("Unable to build SDL Audio: {}", e),
-            Self::UnableToDraw(e) => format!("Unable to draw on SDL canvas: {}", e),
-        };
-
-        write!(f, "{}", error_msg)
-    }
-}
-
-impl std::error::Error for Sdl2Error {}

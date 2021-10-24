@@ -5,8 +5,8 @@ mod sdl2_wrapper;
 
 use chip::Chip8;
 
-use anyhow::Result;
 use anyhow::Error;
+use anyhow::Result;
 use sdl2_wrapper::Sdl2Wrapper;
 
 const CHIP8_HEIGHT: usize = 32;
