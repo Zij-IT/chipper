@@ -5,6 +5,7 @@ use anyhow::Error;
 use anyhow::Result;
 
 use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
+use sdl2::event::Event;
 use sdl2::keyboard::Scancode;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
@@ -59,13 +60,12 @@ impl Sdl2Wrapper {
         Ok(())
     }
 
-    pub fn poll_input(&mut self) -> (bool, [bool; 16]) {
-        let mut pressed_keys = [false; 16];
+    pub fn poll_event(&mut self) -> Option<Event> {
+        self.event_pump.poll_event()
+    }
 
-        let quit = self
-            .event_pump
-            .poll_iter()
-            .any(|event| matches!(event, sdl2::event::Event::Quit { .. }));
+    pub fn poll_input(&mut self) -> [bool; 16] {
+        let mut pressed_keys = [false; 16];
 
         self.event_pump
             .keyboard_state()
@@ -75,7 +75,7 @@ impl Sdl2Wrapper {
                 pressed_keys[key as usize] = true;
             });
 
-        (quit, pressed_keys)
+        pressed_keys
     }
 
     pub fn beep(&mut self) {
@@ -132,7 +132,7 @@ impl Sdl2Wrapper {
         Ok(canvas)
     }
 
-    fn translate_scancode(key: Scancode) -> Option<u8> {
+    pub fn translate_scancode(key: Scancode) -> Option<u8> {
         match key {
             Scancode::Num1 => Some(0x1),
             Scancode::Num2 => Some(0x2),
