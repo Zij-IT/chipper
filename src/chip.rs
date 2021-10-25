@@ -71,7 +71,7 @@ impl Chip8 {
                 }
                 Some(Event::KeyDown { scancode, .. }) => {
                     self.input
-                        .press_key(scancode.map(Sdl2Wrapper::translate_scancode).flatten());
+                        .press_key(scancode.and_then(Sdl2Wrapper::translate_scancode));
                 }
                 _ => {
                     if delay_clock.tick() {
@@ -239,7 +239,7 @@ impl Chip8 {
 
                     let byte = self.memory.get_byte(self.index + oy as u16)?;
                     for ox in 0..8 {
-                        let pixel = (byte >> 7 - ox) & 1;
+                        let pixel = (byte >> (7 - ox)) & 1;
                         let px_x = x + ox;
 
                         pixel_erased |= self.display.draw_pixel(px_x, px_y, pixel);
