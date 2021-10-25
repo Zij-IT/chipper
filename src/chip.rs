@@ -9,6 +9,7 @@ mod stack;
 
 pub use display::FrameBuffer;
 
+use super::Sdl2Wrapper;
 use clock::Clock;
 use display::Display;
 use keyboard::Keyboard;
@@ -21,6 +22,8 @@ use stack::Stack;
 use anyhow::Result;
 use rand::Rng;
 use std::convert::TryFrom;
+
+use sdl2::event::Event;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Chip8 {
@@ -56,34 +59,39 @@ impl Chip8 {
         self.memory.load_rom(rom)
     }
 
-    pub fn run(&mut self, sdl: &mut super::Sdl2Wrapper) -> Result<()> {
+    pub fn run(&mut self, sdl: &mut Sdl2Wrapper) -> Result<()> {
         let mut cpu_clock = Clock::new(700.0);
         let mut delay_clock = Clock::new(60.0);
         let mut sound_clock = Clock::new(60.0);
 
         loop {
-            let (quit_signal, keys) = sdl.poll_input();
-
-            if delay_clock.tick() {
-                self.delay_timer = self.delay_timer.saturating_sub(1);
-            }
-
-            if sound_clock.tick() {
-                self.sound_timer = self.sound_timer.saturating_sub(1);
-                if self.should_beep() {
-                    sdl.beep();
-                } else {
-                    sdl.stop_beep();
+            match sdl.poll_event() {
+                Some(Event::Quit { .. }) => {
+                    break;
                 }
-            }
+                Some(Event::KeyDown { scancode, .. }) => {
+                    self.input
+                        .press_key(scancode.map(Sdl2Wrapper::translate_scancode).flatten());
+                }
+                _ => {
+                    if delay_clock.tick() {
+                        self.delay_timer = self.delay_timer.saturating_sub(1);
+                    }
 
-            if cpu_clock.tick() {
-                self.cycle(keys)?;
-                sdl.draw_on_canvas(self.get_frame_buffer())?;
-            }
+                    if sound_clock.tick() {
+                        self.sound_timer = self.sound_timer.saturating_sub(1);
+                        if self.should_beep() {
+                            sdl.beep();
+                        } else {
+                            sdl.stop_beep();
+                        }
+                    }
 
-            if quit_signal {
-                break;
+                    if cpu_clock.tick() {
+                        self.cycle(sdl.poll_input())?;
+                        sdl.draw_on_canvas(self.get_frame_buffer())?;
+                    }
+                }
             }
         }
 
@@ -644,10 +652,8 @@ mod tests {
     #[test]
     fn load_next_key_press() {
         let mut cpu = Chip8::new();
-        let mut keys = [false; 16];
-        keys[0xA] = true;
-        cpu.input.set_keys(keys);
-
+        assert!(cpu.execute(OpCode::LoadNextKeyPress(0x0)).is_ok());
+        cpu.input.press_key(Some(0xA));
         assert!(cpu.execute(OpCode::LoadNextKeyPress(0x0)).is_ok());
         assert_eq!(cpu.v[0x0], 0xA);
     }
