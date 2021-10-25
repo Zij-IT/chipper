@@ -1,11 +1,17 @@
 #[derive(Debug, PartialEq, Eq)]
 pub struct Keyboard {
     keys: [bool; 16],
+    key: Option<u8>,
+    wait: bool,
 }
 
 impl Keyboard {
     pub fn new() -> Self {
-        Self { keys: [false; 16] }
+        Self {
+            keys: [false; 16],
+            key: None,
+            wait: false,
+        }
     }
 
     pub fn is_key_pressed(&self, key: u8) -> bool {
@@ -16,12 +22,15 @@ impl Keyboard {
         self.keys = keys;
     }
 
-    pub fn get_next_key(&self) -> Option<u8> {
-        self.keys
-            .iter()
-            .copied()
-            .zip(0_u8..)
-            .find(|(pressed, _idx)| *pressed)
-            .map(|(_pressed, idx)| idx)
+    pub fn press_key(&mut self, key: Option<u8>) {
+        if self.wait {
+            self.key = key;
+        }
+    }
+
+    pub fn get_next_key(&mut self) -> Option<u8> {
+        let wait = self.wait;
+        self.wait = !wait || self.key.is_none();
+        self.key.take().filter(|_| wait)
     }
 }
