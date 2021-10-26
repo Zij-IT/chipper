@@ -21,9 +21,8 @@ use stack::Stack;
 
 use anyhow::Result;
 use rand::Rng;
-use std::convert::TryFrom;
-
 use sdl2::event::Event;
+use std::convert::TryFrom;
 
 #[derive(PartialEq, Eq, Debug)]
 pub struct Chip8 {
@@ -299,7 +298,7 @@ impl Chip8 {
             }
             OpCode::LoadAllRegisters(x) => {
                 for offset in 0..=x {
-                    self.v[offset] = self.memory.get_byte(self.index + u16::from(offset))?;
+                    self.v[offset] = *self.memory.get_byte(self.index + u16::from(offset))?;
                 }
 
                 if self.settings.load_store_quirk {
@@ -698,9 +697,9 @@ mod tests {
         assert!(cpu.execute(OpCode::BinaryCodeConversion(0x0)).is_ok());
         assert_eq!(cpu.v[0x0], 152);
         assert_eq!(cpu.index, 0x100);
-        assert_eq!(cpu.memory.get_byte(0x100).unwrap(), 0x1);
-        assert_eq!(cpu.memory.get_byte(0x101).unwrap(), 0x5);
-        assert_eq!(cpu.memory.get_byte(0x102).unwrap(), 0x2);
+        assert_eq!(*cpu.memory.get_byte(0x100).unwrap(), 0x1);
+        assert_eq!(*cpu.memory.get_byte(0x101).unwrap(), 0x5);
+        assert_eq!(*cpu.memory.get_byte(0x102).unwrap(), 0x2);
     }
 
     #[test]
@@ -713,10 +712,10 @@ mod tests {
         cpu.v[0x3] = 0xF;
 
         assert!(cpu.execute(OpCode::StoreAllRegisters(0x3)).is_ok());
-        assert_eq!(cpu.memory.get_byte(0x100).unwrap(), 0xB);
-        assert_eq!(cpu.memory.get_byte(0x101).unwrap(), 0xE);
-        assert_eq!(cpu.memory.get_byte(0x102).unwrap(), 0xE);
-        assert_eq!(cpu.memory.get_byte(0x103).unwrap(), 0xF);
+        assert_eq!(*cpu.memory.get_byte(0x100).unwrap(), 0xB);
+        assert_eq!(*cpu.memory.get_byte(0x101).unwrap(), 0xE);
+        assert_eq!(*cpu.memory.get_byte(0x102).unwrap(), 0xE);
+        assert_eq!(*cpu.memory.get_byte(0x103).unwrap(), 0xF);
     }
 
     #[test]
