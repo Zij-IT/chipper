@@ -1,3 +1,5 @@
+use anyhow::Error;
+use anyhow::Result;
 use std::convert::TryFrom;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -43,7 +45,7 @@ impl TryFrom<u16> for OpCode {
     type Error = anyhow::Error;
 
     #[allow(clippy::cast_possible_truncation)]
-    fn try_from(op: u16) -> Result<Self, Self::Error> {
+    fn try_from(op: u16) -> Result<Self> {
         let nibbles = (
             ((op & 0xF000) >> 12) as u8,
             ((op & 0x0F00) >> 8) as u8,
@@ -93,22 +95,7 @@ impl TryFrom<u16> for OpCode {
             (0xF, _, 0x3, 0x3) => Self::BinaryCodeConversion(x),
             (0xF, _, 0x5, 0x5) => Self::StoreAllRegisters(x),
             (0xF, _, 0x6, 0x5) => Self::LoadAllRegisters(x),
-            _ => return Err(OpCodeError::InvalidOp(op).into()),
+            _ => return Err(Error::msg(format!("Invalid op: 0x{:X}", op))),
         })
     }
 }
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum OpCodeError {
-    InvalidOp(u16),
-}
-
-impl std::fmt::Display for OpCodeError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InvalidOp(op) => write!(f, "Invalid Operation: 0x{:X}", op),
-        }
-    }
-}
-
-impl std::error::Error for OpCodeError {}

@@ -1,3 +1,4 @@
+use anyhow::Error;
 use anyhow::Result;
 
 #[derive(PartialEq, Eq, Debug)]
@@ -16,7 +17,7 @@ impl Stack {
 
     pub fn pop(&mut self) -> Result<u16> {
         if self.stack_ptr == 0 {
-            Err(StackError::Underflow.into())
+            Err(Error::msg("The stack has underflowed."))
         } else {
             self.stack_ptr -= 1;
             Ok(self.stack[self.stack_ptr])
@@ -25,7 +26,7 @@ impl Stack {
 
     pub fn push(&mut self, byte: u16) -> Result<()> {
         if self.stack_ptr >= 16 {
-            Err(StackError::Overflow.into())
+            Err(Error::msg("The stack has overflowed."))
         } else {
             self.stack[self.stack_ptr] = byte;
             self.stack_ptr += 1;
@@ -33,22 +34,3 @@ impl Stack {
         }
     }
 }
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum StackError {
-    Overflow,
-    Underflow,
-}
-
-impl std::fmt::Display for StackError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let msg = match self {
-            Self::Overflow => "overflowed",
-            Self::Underflow => "underflowed",
-        };
-
-        write!(f, "Stack has {}", msg)
-    }
-}
-
-impl std::error::Error for StackError {}
