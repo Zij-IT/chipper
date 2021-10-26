@@ -126,15 +126,13 @@ impl Chip8 {
                 self.display.clear();
             }
             OpCode::Return => {
-                let pc = self.stack.pop()?;
-                self.program_counter = pc;
+                self.program_counter = self.stack.pop()?;
             }
             OpCode::Jump(addr) => {
                 self.program_counter = addr;
             }
             OpCode::Call(addr) => {
-                let to_return = self.program_counter;
-                self.stack.push(to_return)?;
+                self.stack.push(self.program_counter)?;
                 self.program_counter = addr;
             }
             OpCode::SkipEqual(x, kk) => {
