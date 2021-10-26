@@ -88,7 +88,8 @@ impl Chip8 {
                     }
 
                     if cpu_clock.tick() {
-                        self.cycle(sdl.poll_input())?;
+                        self.input.set_keys(sdl.poll_input());
+                        self.cycle()?;
                         sdl.draw_on_canvas(self.get_frame_buffer())?;
                     }
                 }
@@ -98,9 +99,7 @@ impl Chip8 {
         Ok(())
     }
 
-    fn cycle(&mut self, keys: [bool; 16]) -> Result<()> {
-        self.input.set_keys(keys);
-
+    fn cycle(&mut self) -> Result<()> {
         let word = self.fetch()?;
         let op = Self::decode(word)?;
         self.execute(op)
