@@ -1,3 +1,5 @@
+#![allow(clippy::cast_possible_truncation)]
+
 use super::chip::FrameBuffer;
 use super::{CHIP8_HEIGHT, CHIP8_WIDTH, SCALE};
 
@@ -11,6 +13,8 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::EventPump;
 use sdl2::Sdl;
+
+use std::convert::TryFrom;
 
 pub struct Sdl2Wrapper {
     canvas: Canvas<Window>,
@@ -33,6 +37,8 @@ impl Sdl2Wrapper {
     }
 
     pub fn draw_on_canvas(&mut self, buffer: &FrameBuffer) -> Result<()> {
+        // TODO:
+        // Clean this up and add checks for proper conversion between u32 and i32
         for (y, row) in buffer.iter().enumerate() {
             for (x, &col) in row.iter().enumerate() {
                 let x = (x * SCALE) as u32;
@@ -47,8 +53,8 @@ impl Sdl2Wrapper {
                 self.canvas.set_draw_color(color);
                 self.canvas
                     .fill_rect(sdl2::rect::Rect::new(
-                        x as i32,
-                        y as i32,
+                        TryFrom::try_from(x)?,
+                        TryFrom::try_from(y)?,
                         SCALE as u32,
                         SCALE as u32,
                     ))
@@ -101,7 +107,7 @@ impl Sdl2Wrapper {
 
         let device = audio_subsystem
             .open_playback(None, &desired_spec, |spec| SquareWave {
-                phase_inc: 240.0 / spec.freq as f32,
+                phase_inc: (240.0 / f64::from(spec.freq)) as f32,
                 phase: 0.0,
                 volume: 0.25,
             })

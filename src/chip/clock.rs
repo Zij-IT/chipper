@@ -7,7 +7,9 @@ pub struct Clock {
 }
 
 impl Clock {
-    pub fn new(freq: f32) -> Self {
+    #[allow(clippy::cast_possible_truncation)]
+    #[allow(clippy::cast_sign_loss)]
+    pub fn new(freq: f64) -> Self {
         Self {
             period: Duration::from_nanos(1_000_000_000 / freq as u64),
             offset: Instant::now(),

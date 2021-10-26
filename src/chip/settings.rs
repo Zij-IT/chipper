@@ -1,3 +1,4 @@
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, PartialEq, Eq)]
 pub struct Settings {
     pub rom_addr: u16,

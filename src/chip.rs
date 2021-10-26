@@ -114,6 +114,7 @@ impl Chip8 {
         TryFrom::try_from(op)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn execute(&mut self, op: OpCode) -> Result<()> {
         match op {
             OpCode::SysAddr(_addr) => {
@@ -209,8 +210,9 @@ impl Chip8 {
             }
             OpCode::JumpWithOffset(addr) => {
                 let reg_value = if self.settings.jump_quirk {
-                    let x = (addr & 0x0F00) >> 8;
-                    self.v[x as u8]
+                    #[allow(clippy::cast_possible_truncation)]
+                    let x = ((addr & 0x0F00) >> 8) as u8;
+                    self.v[x]
                 } else {
                     self.v[0]
                 };
@@ -233,6 +235,7 @@ impl Chip8 {
                         break;
                     }
 
+                    #[allow(clippy::cast_possible_truncation)]
                     let byte = self.memory.get_byte(self.index + oy as u16)?;
                     for ox in 0..8 {
                         let pixel = (byte >> (7 - ox)) & 1;
