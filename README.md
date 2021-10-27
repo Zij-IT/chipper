@@ -20,13 +20,6 @@ cargo run --release -- /path/to/game.ch8
 - [x] index register overflow
 - [x] vertical wrap
 - [x] shift
-- [ ] vblank
-- [ ] flag order 
-- [ ] lores draw 
-- [ ] delay wrap 
-- [ ] hi-res collision
-- [ ] clip collision
-- [ ] scroll
    
 ## Recommended Resources:
 * [Tobiasvl's amazing guide for Chip8](https://tobiasvl.github.io/blog/write-a-chip-8-emulator/)
